@@ -41,7 +41,29 @@ export default function CheckoutPage() {
         updatedAt: serverTimestamp()
       };
       
-      await addDoc(collection(db, 'orders'), orderData);
+      const docRef = await addDoc(collection(db, 'orders'), orderData);
+      
+      // Send easy email notification via Web3Forms
+      const web3Key = import.meta.env.VITE_WEB3FORMS_KEY;
+      if (web3Key) {
+        const formData = new FormData();
+        formData.append("access_key", web3Key);
+        formData.append("subject", `New Order from ${form.customerName} - $${total}`);
+        formData.append("from_name", "AURORA Store");
+        formData.append("Order ID", docRef.id);
+        formData.append("Customer", form.customerName);
+        formData.append("Email", form.email);
+        formData.append("Phone", form.phone);
+        formData.append("Address", form.address);
+        formData.append("Total", `$${total}`);
+        formData.append("Items", cart.map(item => `${item.name} (${item.size}) x${item.quantity}`).join(', '));
+
+        fetch("https://api.web3forms.com/submit", {
+          method: "POST",
+          body: formData
+        });
+      }
+
       localStorage.removeItem('cart');
       setIsSuccess(true);
     } catch (error) {

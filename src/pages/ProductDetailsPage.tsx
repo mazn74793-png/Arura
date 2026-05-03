@@ -3,8 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { Product, Gender } from '../types';
-import { motion } from 'framer-motion';
-import { ChevronLeft, Plus, Minus, Info } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { ChevronLeft, ChevronRight, Plus, Minus, Info, ShoppingBag } from 'lucide-react';
 import { cn } from '../lib/utils';
 
 export default function ProductDetailsPage() {
@@ -16,6 +16,7 @@ export default function ProductDetailsPage() {
   const [selectedGender, setSelectedGender] = useState<Gender>('man');
   const [quantity, setQuantity] = useState(1);
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  const [activeImageIndex, setActiveImageIndex] = useState(0);
 
   useEffect(() => {
     async function fetchSettings() {
@@ -104,24 +105,57 @@ export default function ProductDetailsPage() {
 
       <main className="max-w-7xl mx-auto px-4 md:px-6 py-8 md:py-24">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-16 items-start">
-          {/* Images */}
+          {/* Gallery */}
           <div className="space-y-4">
-            {product.images.map((img, i) => (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: i * 0.2 }}
-                className="aspect-[3/4] bg-neutral-900 overflow-hidden border border-white/5"
-              >
-                <img 
-                   src={img} 
-                  alt={`${product.name} ${i + 1}`} 
+            <div className="relative group aspect-[3/4] bg-neutral-900 border border-white/5 overflow-hidden">
+              <AnimatePresence mode="wait">
+                <motion.img 
+                  key={activeImageIndex}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.5 }}
+                  src={product.images[activeImageIndex]} 
+                  alt={product.name}
                   className="w-full h-full object-cover"
                   referrerPolicy="no-referrer"
                 />
-              </motion.div>
-            ))}
+              </AnimatePresence>
+              
+              {product.images.length > 1 && (
+                <>
+                  <button 
+                    onClick={() => setActiveImageIndex((prev) => (prev > 0 ? prev - 1 : product.images.length - 1))}
+                    className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-black/50 backdrop-blur-md rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-white hover:text-black"
+                  >
+                    <ChevronLeft className="w-5 h-5" />
+                  </button>
+                  <button 
+                    onClick={() => setActiveImageIndex((prev) => (prev < product.images.length - 1 ? prev + 1 : 0))}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-black/50 backdrop-blur-md rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-white hover:text-black"
+                  >
+                    <ChevronRight className="w-5 h-5" />
+                  </button>
+                </>
+              )}
+            </div>
+            
+            {product.images.length > 1 && (
+              <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-none">
+                {product.images.map((img, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setActiveImageIndex(i)}
+                    className={cn(
+                      "flex-shrink-0 w-20 aspect-[3/4] bg-neutral-900 border overflow-hidden transition-all duration-300",
+                      activeImageIndex === i ? "border-white" : "border-white/5 opacity-40 hover:opacity-100"
+                    )}
+                  >
+                    <img src={img} alt="thumbnail" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Details */}

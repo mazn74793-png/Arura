@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, collection, query, limit, getDocs } from 'firebase/firestore';
 import { db } from '../lib/firebase';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, ArrowRight } from 'lucide-react';
+import { Product } from '../types';
 
 // Global variable to track entry within the same JS session (lost on refresh)
 let hasEnteredThisSession = false;
@@ -13,6 +14,7 @@ export default function LandingPage() {
   const [showContent, setShowContent] = useState(false);
   const [landingVideoUrl, setLandingVideoUrl] = useState<string | null>(null);
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
   const navigate = useNavigate();
 
   // Check if user has already entered in this JS session
@@ -44,7 +46,20 @@ export default function LandingPage() {
         setLandingVideoUrl(defaultVideo);
       }
     }
+
+    async function fetchFeatured() {
+      try {
+        const q = query(collection(db, 'products'), limit(4));
+        const snap = await getDocs(q);
+        const prods = snap.docs.map(doc => ({ ...doc.data() as Product, id: doc.id }));
+        setFeaturedProducts(prods);
+      } catch (error) {
+        console.error("Error fetching featured products:", error);
+      }
+    }
+
     fetchSettings();
+    fetchFeatured();
   }, []);
 
   const handleEnter = () => {
@@ -160,34 +175,87 @@ export default function LandingPage() {
             </button>
           </motion.div>
 
-          {/* ... Categories and rest of content ... */}
-          <div className="mt-32 md:mt-64 grid grid-cols-1 md:grid-cols-3 gap-1px bg-white/5 border border-white/5">
-            {[
-              { name: 'PANTS', desc: 'Sculpted Silhouettes', img: 'https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?auto=format&fit=crop&q=80&w=800' },
-              { name: 'SHIRTS', desc: 'Fluid Architecture', img: 'https://images.unsplash.com/photo-1596755094514-f87e34085b2c?auto=format&fit=crop&q=80&w=800' },
-              { name: 'BASIC TOPS', desc: 'Minimal Foundations', img: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&q=80&w=800' }
-            ].map((cat, i) => (
-              <motion.div
-                key={cat.name}
-                initial={{ opacity: 0 }}
-                whileInView={{ opacity: 1 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.2 }}
-                className="group relative aspect-[3/5] bg-black overflow-hidden flex flex-col justify-end p-8 md:p-12 cursor-pointer"
+          {/* Featured Products Grid */}
+          <div className="mt-32 md:mt-64 space-y-16">
+            <div className="flex flex-col md:flex-row md:justify-between md:items-end gap-6 text-center md:text-left">
+              <div className="space-y-4">
+                <motion.span 
+                  initial={{ opacity: 0, x: -20 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  className="text-[10px] font-mono text-neutral-500 uppercase tracking-[0.5em] block"
+                >
+                  Selected Works
+                </motion.span>
+                <h3 className="text-4xl md:text-6xl font-display uppercase tracking-tight leading-none">Essential Pieces</h3>
+              </div>
+              <button 
                 onClick={() => navigate('/shop')}
+                className="group flex items-center justify-center gap-3 text-[10px] font-mono uppercase tracking-[0.3em] text-neutral-400 hover:text-white transition-all py-4 px-8 border border-white/5 hover:border-white/20"
               >
-                <img 
-                  src={cat.img} 
-                  alt={cat.name}
-                  className="absolute inset-0 w-full h-full object-cover opacity-40 group-hover:opacity-60 transition-opacity duration-700 brightness-50 grayscale hover:grayscale-0"
-                  referrerPolicy="no-referrer"
-                />
-                <div className="relative z-10 space-y-2 text-left">
-                  <span className="text-[10px] font-mono text-neutral-500 uppercase tracking-widest">{cat.desc}</span>
-                  <h3 className="text-3xl md:text-4xl font-display">{cat.name}</h3>
-                </div>
-              </motion.div>
-            ))}
+                View Collection <ArrowRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
+              </button>
+            </div>
+
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-x-4 md:gap-x-8 gap-y-12">
+              {featuredProducts.map((product, i) => (
+                <motion.div
+                  key={product.id}
+                  initial={{ opacity: 0, y: 30 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: i * 0.1, duration: 0.8, ease: "easeOut" }}
+                  className="group cursor-pointer space-y-6"
+                  onClick={() => navigate(`/product/${product.id}`)}
+                >
+                  <div className="aspect-[3/4] bg-neutral-900 overflow-hidden relative">
+                    <img 
+                      src={product.images[0]} 
+                      alt={product.name}
+                      className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110 grayscale brightness-75 group-hover:brightness-100 group-hover:grayscale-0"
+                      referrerPolicy="no-referrer"
+                    />
+                    <div className="absolute inset-x-0 bottom-0 p-4 translate-y-full group-hover:translate-y-0 transition-transform duration-500 bg-black/40 backdrop-blur-sm">
+                       <p className="text-[10px] font-mono uppercase tracking-widest text-center">Quick View</p>
+                    </div>
+                  </div>
+                  <div className="space-y-2 text-center md:text-left">
+                    <h4 className="text-xs md:text-sm font-display uppercase tracking-wider group-hover:text-neutral-400 transition-colors">{product.name}</h4>
+                    <p className="text-[10px] font-mono text-neutral-500 tracking-[0.2em]">${product.price}</p>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+
+            {featuredProducts.length === 0 && (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-1px bg-white/5 border border-white/5">
+                {[
+                  { name: 'PANTS', desc: 'Sculpted Silhouettes', img: 'https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?auto=format&fit=crop&q=80&w=800' },
+                  { name: 'SHIRTS', desc: 'Fluid Architecture', img: 'https://images.unsplash.com/photo-1596755094514-f87e34085b2c?auto=format&fit=crop&q=80&w=800' },
+                  { name: 'OUTERWEAR', desc: 'Elemental Protection', img: 'https://images.unsplash.com/photo-1551028719-00167b16eac5?auto=format&fit=crop&q=80&w=800' }
+                ].map((cat, i) => (
+                  <motion.div
+                    key={cat.name}
+                    initial={{ opacity: 0 }}
+                    whileInView={{ opacity: 1 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: i * 0.2 }}
+                    className="group relative aspect-[3/5] bg-black overflow-hidden flex flex-col justify-end p-8 md:p-12 cursor-pointer"
+                    onClick={() => navigate('/shop')}
+                  >
+                    <img 
+                      src={cat.img} 
+                      alt={cat.name}
+                      className="absolute inset-0 w-full h-full object-cover opacity-40 group-hover:opacity-60 transition-opacity duration-700 brightness-50 grayscale hover:grayscale-0"
+                      referrerPolicy="no-referrer"
+                    />
+                    <div className="relative z-10 space-y-2 text-left">
+                      <span className="text-[10px] font-mono text-neutral-500 uppercase tracking-widest">{cat.desc}</span>
+                      <h3 className="text-3xl md:text-4xl font-display">{cat.name}</h3>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            )}
           </div>
         </main>
 
