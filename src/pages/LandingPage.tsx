@@ -5,6 +5,9 @@ import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { ChevronDown } from 'lucide-react';
 
+// Global variable to track entry within the same JS session (lost on refresh)
+let hasEnteredThisSession = false;
+
 export default function LandingPage() {
   const [isEntering, setIsEntering] = useState(false);
   const [showContent, setShowContent] = useState(false);
@@ -12,10 +15,9 @@ export default function LandingPage() {
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const navigate = useNavigate();
 
-  // Check if user has already entered in this session
+  // Check if user has already entered in this JS session
   useEffect(() => {
-    const hasEntered = sessionStorage.getItem('aurora_entered');
-    if (hasEntered === 'true') {
+    if (hasEnteredThisSession) {
       setIsEntering(true);
       setShowContent(true);
     }
@@ -55,7 +57,7 @@ export default function LandingPage() {
 
   const handleVideoEnd = () => {
     setShowContent(true);
-    sessionStorage.setItem('aurora_entered', 'true');
+    hasEnteredThisSession = true;
   };
 
   return (
