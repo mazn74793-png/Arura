@@ -12,6 +12,15 @@ export default function LandingPage() {
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const navigate = useNavigate();
 
+  // Check if user has already entered in this session
+  useEffect(() => {
+    const hasEntered = sessionStorage.getItem('aurora_entered');
+    if (hasEntered === 'true') {
+      setIsEntering(true);
+      setShowContent(true);
+    }
+  }, []);
+
   // Your provided video as default
   const defaultVideo = "https://storage.googleapis.com/cortex-blobs/6baf5333-e18e-4a87-b99b-fe3e2f5b82ac";
 
@@ -46,6 +55,7 @@ export default function LandingPage() {
 
   const handleVideoEnd = () => {
     setShowContent(true);
+    sessionStorage.setItem('aurora_entered', 'true');
   };
 
   return (
@@ -82,17 +92,17 @@ export default function LandingPage() {
                   <motion.img 
                     src={logoUrl} 
                     alt="Aurora Logo" 
-                    className="w-48 md:w-64 h-auto"
+                    className="w-40 md:w-64 h-auto max-w-[80vw]"
                     initial={{ opacity: 0, scale: 0.9 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ duration: 1.5 }}
                   />
                 ) : (
-                  <div className="text-6xl md:text-[10rem] font-display tracking-tighter text-white uppercase leading-none">AURORA</div>
+                  <div className="text-5xl md:text-[8rem] lg:text-[10rem] font-display tracking-tighter text-white uppercase leading-none text-center px-4">AURORA</div>
                 )}
                 <button 
                   onClick={handleEnter}
-                  className="px-20 py-6 border border-white text-white font-mono tracking-[1em] text-xs uppercase hover:bg-white hover:text-black transition-all duration-700 relative overflow-hidden group"
+                  className="px-8 md:px-20 py-4 md:py-6 border border-white text-white font-mono tracking-[0.5em] md:tracking-[1em] text-[10px] md:text-xs uppercase hover:bg-white hover:text-black transition-all duration-700 relative overflow-hidden group"
                 >
                   <span className="relative z-10">ENTER THE VOID</span>
                   <div className="absolute inset-0 bg-white translate-y-full group-hover:translate-y-0 transition-transform duration-500 z-0" />
@@ -111,45 +121,45 @@ export default function LandingPage() {
         style={{ display: showContent ? 'block' : 'none' }}
         className="min-h-screen bg-black"
       >
-        <nav className="p-8 flex justify-between items-center border-b border-white/5 sticky top-0 bg-black/80 backdrop-blur-md z-40">
+        <nav className="p-4 md:p-8 flex justify-between items-center border-b border-white/5 sticky top-0 bg-black/80 backdrop-blur-md z-40">
           <div className="cursor-pointer" onClick={() => navigate('/')}>
             {logoUrl ? (
-              <img src={logoUrl} alt="Logo" className="h-8 w-auto grayscale brightness-200" />
+              <img src={logoUrl} alt="Logo" className="h-6 md:h-8 w-auto grayscale brightness-200" />
             ) : (
-              <div className="text-2xl font-display tracking-tighter">AURORA</div>
+              <div className="text-xl md:text-2xl font-display tracking-tighter">AURORA</div>
             )}
           </div>
-          <div className="flex gap-8 font-mono text-xs uppercase tracking-widest">
+          <div className="flex gap-4 md:gap-8 font-mono text-[10px] md:text-xs uppercase tracking-widest">
             <button onClick={() => navigate('/shop')} className="hover:text-white/60 transition-colors">Shop</button>
             <button onClick={() => navigate('/admin')} className="hover:text-white/60 transition-colors">Admin</button>
           </div>
         </nav>
 
-        <main className="max-w-7xl mx-auto px-8 pt-24 pb-48">
+        <main className="max-w-7xl mx-auto px-4 md:px-8 pt-16 md:pt-24 pb-24 md:pb-48">
           <motion.div 
             initial={{ opacity: 0, y: 40 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 1 }}
-            className="flex flex-col items-center text-center space-y-12"
+            className="flex flex-col items-center text-center space-y-8 md:space-y-12"
           >
             <div className="space-y-4">
-              <p className="text-[10px] font-mono tracking-[0.5em] text-neutral-500 uppercase">Perception / Series 01</p>
-              <h2 className="text-7xl md:text-[12rem] font-display leading-[0.75] tracking-tighter uppercase">
+              <p className="text-[10px] font-mono tracking-[0.3em] md:tracking-[0.5em] text-neutral-500 uppercase">Perception / Series 01</p>
+              <h2 className="text-5xl md:text-[8rem] lg:text-[12rem] font-display leading-[0.85] tracking-tighter uppercase">
                 Obsidian<br />Minimalism
               </h2>
             </div>
             
             <button 
               onClick={() => navigate('/shop')}
-              className="mt-8 px-12 py-5 bg-white text-black font-mono font-bold tracking-widest text-xs uppercase hover:bg-neutral-200 transition-all active:scale-95 shadow-2xl hover:shadow-white/10"
+              className="mt-4 md:mt-8 px-8 md:px-12 py-4 md:py-5 bg-white text-black font-mono font-bold tracking-widest text-[10px] md:text-xs uppercase hover:bg-neutral-200 transition-all active:scale-95 shadow-2xl hover:shadow-white/10"
             >
               Enter Collection
             </button>
           </motion.div>
 
           {/* ... Categories and rest of content ... */}
-          <div className="mt-64 grid grid-cols-1 md:grid-cols-3 gap-1px bg-white/5 border border-white/5">
+          <div className="mt-32 md:mt-64 grid grid-cols-1 md:grid-cols-3 gap-1px bg-white/5 border border-white/5">
             {[
               { name: 'PANTS', desc: 'Sculpted Silhouettes', img: 'https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?auto=format&fit=crop&q=80&w=800' },
               { name: 'SHIRTS', desc: 'Fluid Architecture', img: 'https://images.unsplash.com/photo-1596755094514-f87e34085b2c?auto=format&fit=crop&q=80&w=800' },
@@ -161,7 +171,7 @@ export default function LandingPage() {
                 whileInView={{ opacity: 1 }}
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.2 }}
-                className="group relative aspect-[3/5] bg-black overflow-hidden flex flex-col justify-end p-12 cursor-pointer"
+                className="group relative aspect-[3/5] bg-black overflow-hidden flex flex-col justify-end p-8 md:p-12 cursor-pointer"
                 onClick={() => navigate('/shop')}
               >
                 <img 
@@ -170,20 +180,20 @@ export default function LandingPage() {
                   className="absolute inset-0 w-full h-full object-cover opacity-40 group-hover:opacity-60 transition-opacity duration-700 brightness-50 grayscale hover:grayscale-0"
                   referrerPolicy="no-referrer"
                 />
-                <div className="relative z-10 space-y-2">
+                <div className="relative z-10 space-y-2 text-left">
                   <span className="text-[10px] font-mono text-neutral-500 uppercase tracking-widest">{cat.desc}</span>
-                  <h3 className="text-4xl font-display">{cat.name}</h3>
+                  <h3 className="text-3xl md:text-4xl font-display">{cat.name}</h3>
                 </div>
               </motion.div>
             ))}
           </div>
         </main>
 
-        <footer className="p-24 border-t border-white/5 flex flex-col items-center justify-center space-y-12">
+        <footer className="p-12 md:p-24 border-t border-white/5 flex flex-col items-center justify-center space-y-8 md:space-y-12">
            {logoUrl ? (
-             <img src={logoUrl} alt="Logo" className="h-12 w-auto grayscale opacity-40" />
+             <img src={logoUrl} alt="Logo" className="h-8 md:h-12 w-auto grayscale opacity-40" />
            ) : (
-             <div className="text-6xl font-display tracking-tighter">AURORA</div>
+             <div className="text-4xl md:text-6xl font-display tracking-tighter">AURORA</div>
            )}
            <div className="text-[8px] font-mono tracking-[0.8em] text-neutral-800 uppercase">
              ©MMXXVI / ALL RIGHTS RESERVED

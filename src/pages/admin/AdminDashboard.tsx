@@ -55,6 +55,9 @@ export default function AdminDashboard() {
             <Link
               key={item.path}
               to={item.path}
+              onClick={() => {
+                if (window.innerWidth < 1024) setIsSidebarOpen(false);
+              }}
               className={cn(
                 "flex items-center gap-4 px-4 py-3 rounded-lg text-sm font-mono uppercase tracking-widest transition-all",
                 location.pathname === item.path 
