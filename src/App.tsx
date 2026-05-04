@@ -9,6 +9,8 @@ import AdminLoginPage from './pages/admin/AdminLoginPage';
 import { auth, db } from './lib/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
+import { CartProvider } from './context/CartContext';
+import CartDrawer from './components/CartDrawer';
 
 export default function App() {
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
@@ -28,28 +30,31 @@ export default function App() {
   }, []);
 
   return (
-    <Router>
-      <Routes>
-        <Route path="/" element={<LandingPage />} />
-        <Route path="/shop" element={<ShopPage />} />
-        <Route path="/product/:id" element={<ProductDetailsPage />} />
-        <Route path="/checkout" element={<CheckoutPage />} />
-        
-        {/* Admin Routes */}
-        <Route 
-          path="/admin/*" 
-          element={
-            loading ? (
-              <div className="h-screen flex items-center justify-center bg-black text-white">Loading...</div>
-            ) : isAdmin ? (
-              <AdminDashboard />
-            ) : (
-              <AdminLoginPage />
-            )
-          } 
-        />
-      </Routes>
-    </Router>
+    <CartProvider>
+      <Router>
+        <CartDrawer />
+        <Routes>
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/shop" element={<ShopPage />} />
+          <Route path="/product/:id" element={<ProductDetailsPage />} />
+          <Route path="/checkout" element={<CheckoutPage />} />
+          
+          {/* Admin Routes */}
+          <Route 
+            path="/admin/*" 
+            element={
+              loading ? (
+                <div className="h-screen flex items-center justify-center bg-black text-white">Loading...</div>
+              ) : isAdmin ? (
+                <AdminDashboard />
+              ) : (
+                <AdminLoginPage />
+              )
+            } 
+          />
+        </Routes>
+      </Router>
+    </CartProvider>
   );
 }
 

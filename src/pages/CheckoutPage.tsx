@@ -1,15 +1,15 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../lib/firebase';
-import { OrderItem } from '../types';
 import { motion } from 'framer-motion';
-import { ChevronLeft, ShoppingBag, CheckCircle2 } from 'lucide-react';
+import { ChevronLeft, ShoppingBag, CheckCircle2, Trash2 } from 'lucide-react';
 import { cn } from '../lib/utils';
+import { useCart } from '../context/CartContext';
 
 export default function CheckoutPage() {
   const navigate = useNavigate();
-  const [cart, setCart] = useState<any[]>([]);
+  const { cart, cartTotal, clearCart, removeFromCart } = useCart();
   const [form, setForm] = useState({
     customerName: '',
     email: '',
@@ -18,13 +18,6 @@ export default function CheckoutPage() {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
-
-  useEffect(() => {
-    const savedCart = JSON.parse(localStorage.getItem('cart') || '[]');
-    setCart(savedCart);
-  }, []);
-
-  const total = cart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,7 +28,7 @@ export default function CheckoutPage() {
       const orderData = {
         ...form,
         items: cart,
-        total,
+        total: cartTotal,
         status: 'pending',
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp()
@@ -48,14 +41,14 @@ export default function CheckoutPage() {
       if (web3Key) {
         const formData = new FormData();
         formData.append("access_key", web3Key);
-        formData.append("subject", `New Order from ${form.customerName} - $${total}`);
+        formData.append("subject", `New Order from ${form.customerName} - $${cartTotal}`);
         formData.append("from_name", "AURORA Store");
         formData.append("Order ID", docRef.id);
         formData.append("Customer", form.customerName);
         formData.append("Email", form.email);
         formData.append("Phone", form.phone);
         formData.append("Address", form.address);
-        formData.append("Total", `$${total}`);
+        formData.append("Total", `$${cartTotal}`);
         formData.append("Items", cart.map(item => `${item.name} (${item.size}) x${item.quantity}`).join(', '));
 
         fetch("https://api.web3forms.com/submit", {
@@ -64,7 +57,7 @@ export default function CheckoutPage() {
         });
       }
 
-      localStorage.removeItem('cart');
+      clearCart();
       setIsSuccess(true);
     } catch (error) {
       console.error("Error submitting order:", error);
@@ -187,26 +180,23 @@ export default function CheckoutPage() {
                 </div>
               ) : (
                 cart.map((item, i) => (
-                  <div key={i} className="flex gap-6 items-center">
-                    <div className="w-20 h-24 bg-neutral-900 border border-white/5 flex-shrink-0" />
+                  <div key={i} className="flex gap-6 items-center group">
+                    <div className="w-20 aspect-[3/4] bg-neutral-900 border border-white/5 flex-shrink-0 overflow-hidden">
+                      {item.image && <img src={item.image} alt={item.name} className="w-full h-full object-cover grayscale brightness-75 group-hover:grayscale-0 transition-all duration-700" />}
+                    </div>
                     <div className="flex-1 space-y-1">
-                      <h4 className="text-sm uppercase font-medium">{item.name}</h4>
+                      <h4 className="text-xs uppercase font-medium">{item.name}</h4>
                       <p className="text-[10px] font-mono text-neutral-500 uppercase tracking-widest">{item.gender} / Size {item.size}</p>
                       <button 
-                        onClick={() => {
-                          const newCart = [...cart];
-                          newCart.splice(i, 1);
-                          setCart(newCart);
-                          localStorage.setItem('cart', JSON.stringify(newCart));
-                        }}
-                        className="text-[10px] font-mono text-red-500/50 hover:text-red-500 transition-colors uppercase tracking-widest pt-2"
+                        onClick={() => removeFromCart(i)}
+                        className="text-[10px] font-mono text-neutral-600 hover:text-white transition-colors uppercase tracking-widest pt-2 flex items-center gap-1"
                       >
-                        Remove
+                        <Trash2 className="w-3 h-3" /> Remove
                       </button>
                     </div>
                     <div className="text-right">
                       <p className="text-sm font-mono">${item.price}</p>
-                      <p className="text-[10px] font-mono text-neutral-500">QTY: {item.quantity}</p>
+                      <p className="text-[10px] font-mono text-neutral-500 uppercase">Qty: {item.quantity}</p>
                     </div>
                   </div>
                 ))
@@ -216,7 +206,7 @@ export default function CheckoutPage() {
             <div className="pt-8 border-t border-white/10 space-y-4">
               <div className="flex justify-between items-center text-[10px] font-mono uppercase tracking-[0.2em] text-neutral-500">
                 <span>Subtotal</span>
-                <span>${total}</span>
+                <span>${cartTotal}</span>
               </div>
               <div className="flex justify-between items-center text-[10px] font-mono uppercase tracking-[0.2em] text-neutral-500">
                 <span>Shipping</span>
@@ -224,7 +214,7 @@ export default function CheckoutPage() {
               </div>
               <div className="flex justify-between items-center text-xl font-display tracking-tight pt-4 border-t border-white/20">
                 <span>TOTAL</span>
-                <span>${total}</span>
+                <span>${cartTotal}</span>
               </div>
             </div>
           </div>

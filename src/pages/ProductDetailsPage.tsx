@@ -7,9 +7,12 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronLeft, ChevronRight, Plus, Minus, Info, ShoppingBag } from 'lucide-react';
 import { cn } from '../lib/utils';
 
+import { useCart } from '../context/CartContext';
+
 export default function ProductDetailsPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { addToCart, setIsCartOpen } = useCart();
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedSize, setSelectedSize] = useState<string>('');
@@ -57,19 +60,20 @@ export default function ProductDetailsPage() {
 
   const handleAddToCart = () => {
     if (!product) return;
-    const cartItem = {
+    if (!selectedSize) {
+      alert("Please select a size");
+      return;
+    }
+
+    addToCart({
       productId: product.id,
       name: product.name,
       price: product.price,
       size: selectedSize,
       quantity,
-      gender: selectedGender
-    };
-    
-    // Simple state management for demo: store in localStorage
-    const currentCart = JSON.parse(localStorage.getItem('cart') || '[]');
-    localStorage.setItem('cart', JSON.stringify([...currentCart, cartItem]));
-    navigate('/checkout');
+      gender: selectedGender,
+      image: product.images[0]
+    });
   };
 
   if (loading) return (
@@ -100,11 +104,16 @@ export default function ProductDetailsPage() {
             <div className="text-xl md:text-2xl font-display tracking-tighter uppercase">AURORA</div>
           )}
         </div>
-        <div className="w-8 md:w-20" />
+        <button 
+          onClick={() => setIsCartOpen(true)}
+          className="p-2 text-neutral-500 hover:text-white transition-colors"
+        >
+          <ShoppingBag className="w-5 h-5" />
+        </button>
       </nav>
 
       <main className="max-w-7xl mx-auto px-4 md:px-6 py-8 md:py-24">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-16 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-16 items-start">
           {/* Gallery */}
           <div className="space-y-4">
             <div className="relative group aspect-[3/4] bg-neutral-900 border border-white/5 overflow-hidden">
@@ -159,7 +168,7 @@ export default function ProductDetailsPage() {
           </div>
 
           {/* Details */}
-          <div className="md:sticky md:top-32 space-y-8 md:space-y-12">
+          <div className="lg:sticky lg:top-32 space-y-8 md:space-y-12">
             <header className="space-y-3 md:space-y-4">
               <p className="text-[10px] font-mono text-neutral-500 uppercase tracking-[0.3em]">{product.category}</p>
               <h1 className="text-3xl md:text-6xl font-display tracking-tighter leading-tight uppercase">{product.name}</h1>
@@ -226,15 +235,21 @@ export default function ProductDetailsPage() {
               Secure Choice
             </button>
 
-            <div className="pt-8 md:pt-12 space-y-4 md:space-y-6 border-t border-white/5">
+            <div className="pt-8 md:pt-12 space-y-4 md:space-y-8 border-t border-white/5">
               <div className="flex items-start gap-4">
-                <Info className="w-5 h-5 text-neutral-500 mt-0.5" />
-                <div className="space-y-2">
-                   <h4 className="text-[10px] font-mono uppercase tracking-widest">Description</h4>
+                <Info className="w-5 h-5 text-neutral-500 mt-1" />
+                <div className="space-y-3">
+                   <h4 className="text-[10px] font-mono uppercase tracking-widest text-neutral-300">Description</h4>
                    <p className="text-xs md:text-sm text-neutral-400 leading-relaxed font-light">
                      {product.description || "A masterfully crafted piece reflecting the Aurora aesthetic. Designed for durability and comfort with high-quality materials."}
                    </p>
                 </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4 text-[8px] font-mono uppercase tracking-widest text-neutral-600">
+                  <div className="p-4 border border-white/5">Ethically Sourced</div>
+                  <div className="p-4 border border-white/5">Lifetime Assembly</div>
+                  <div className="p-4 border border-white/5">Sync with Essentials</div>
+                  <div className="p-4 border border-white/5">Limited Edition</div>
               </div>
             </div>
           </div>

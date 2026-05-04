@@ -3,16 +3,20 @@ import { collection, query, where, getDocs, orderBy, doc, getDoc } from 'firebas
 import { db } from '../lib/firebase';
 import { Product, Category } from '../types';
 import ProductCard from '../components/ProductCard';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { ShoppingBag, ChevronLeft } from 'lucide-react';
+import { ShoppingBag, ChevronLeft, Search, X } from 'lucide-react';
+import { useCart } from '../context/CartContext';
 
 export default function ShopPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState<Category | 'all'>('all');
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
   const navigate = useNavigate();
+  const { setIsCartOpen, cart } = useCart();
 
   const categories: { id: Category | 'all'; label: string }[] = [
     { id: 'all', label: 'All' },
@@ -48,10 +52,18 @@ export default function ShopPage() {
         }
         
         const querySnapshot = await getDocs(q);
-        const productsData = querySnapshot.docs.map(doc => ({
+        let productsData = querySnapshot.docs.map(doc => ({
           id: doc.id,
           ...doc.data()
         })) as Product[];
+
+        if (searchQuery) {
+          productsData = productsData.filter(p => 
+            p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            p.category.toLowerCase().includes(searchQuery.toLowerCase())
+          );
+        }
+
         setProducts(productsData);
       } catch (error) {
         console.error("Error fetching products:", error);
@@ -61,18 +73,27 @@ export default function ShopPage() {
     }
 
     fetchProducts();
-  }, [activeCategory]);
+  }, [activeCategory, searchQuery]);
 
   return (
     <div className="min-h-screen bg-black text-white selection:bg-white selection:text-black">
       {/* Navbar */}
       <nav className="sticky top-0 z-40 bg-black/80 backdrop-blur-md border-b border-white/5 p-4 md:p-6 flex justify-between items-center">
-        <button 
-          onClick={() => navigate('/')}
-          className="flex items-center gap-2 text-[10px] md:text-xs font-mono uppercase tracking-widest text-neutral-500 hover:text-white transition-colors"
-        >
-          <ChevronLeft className="w-4 h-4" /> <span className="hidden sm:inline">Back</span>
-        </button>
+        <div className="flex items-center gap-4">
+          <button 
+            onClick={() => navigate('/')}
+            className="flex items-center gap-2 text-[10px] md:text-xs font-mono uppercase tracking-widest text-neutral-500 hover:text-white transition-colors"
+          >
+            <ChevronLeft className="w-4 h-4" /> <span className="hidden sm:inline">Back</span>
+          </button>
+          <button 
+            onClick={() => setIsSearchOpen(!isSearchOpen)}
+            className="p-2 text-neutral-500 hover:text-white transition-colors"
+          >
+            <Search className="w-4 h-4" />
+          </button>
+        </div>
+
         <div className="cursor-pointer" onClick={() => navigate('/')}>
           {logoUrl ? (
             <img src={logoUrl} alt="Logo" className="h-6 md:h-8 w-auto grayscale brightness-200" />
@@ -80,22 +101,60 @@ export default function ShopPage() {
             <div className="text-xl md:text-2xl font-display tracking-tighter uppercase">AURORA</div>
           )}
         </div>
-        <button className="relative">
-          <ShoppingBag className="w-5 h-5 text-white" strokeWidth={1.5} />
+
+        <button 
+          onClick={() => setIsCartOpen(true)}
+          className="relative group p-2"
+        >
+          <ShoppingBag className="w-5 h-5 text-white group-hover:scale-110 transition-transform" strokeWidth={1.5} />
+          {cart.length > 0 && (
+            <span className="absolute -top-1 -right-1 w-4 h-4 bg-white text-black text-[8px] font-bold rounded-full flex items-center justify-center">
+              {cart.length}
+            </span>
+          )}
         </button>
       </nav>
 
+      {/* Search Overlay */}
+      <AnimatePresence>
+        {isSearchOpen && (
+          <motion.div 
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="fixed top-[65px] md:top-[81px] inset-x-0 bg-black border-b border-white/10 z-30 p-6"
+          >
+            <div className="max-w-3xl mx-auto relative">
+              <input 
+                autoFocus
+                type="text" 
+                placeholder="SEARCH_COLLECTION" 
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full bg-transparent border-none text-2xl md:text-4xl font-display uppercase tracking-tighter outline-none placeholder:text-neutral-900"
+              />
+              <button 
+                onClick={() => { setSearchQuery(''); setIsSearchOpen(false); }}
+                className="absolute right-0 top-1/2 -translate-y-1/2 p-2 text-neutral-600 hover:text-white"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <main className="max-w-7xl mx-auto px-4 md:px-6 py-8 md:py-12">
         {/* Category Filters */}
-        <div className="flex flex-wrap gap-2 md:gap-4 mb-12 md:mb-16 justify-center">
+        <div className="flex flex-wrap gap-2 md:gap-4 mb-16 md:mb-24 justify-center">
           {categories.map((cat) => (
             <button
               key={cat.id}
               onClick={() => setActiveCategory(cat.id)}
-              className={`px-4 md:px-6 py-2 text-[8px] md:text-[10px] font-mono uppercase tracking-[0.2em] transition-all duration-300 border ${
+              className={`px-4 md:px-8 py-3 text-[8px] md:text-[10px] font-mono uppercase tracking-[0.3em] transition-all duration-500 border ${
                 activeCategory === cat.id 
                   ? 'bg-white text-black border-white' 
-                  : 'bg-transparent text-neutral-500 border-white/10 hover:border-white/40'
+                  : 'bg-transparent text-neutral-500 border-white/5 hover:border-white/20'
               }`}
             >
               {cat.label}
@@ -104,35 +163,45 @@ export default function ShopPage() {
         </div>
 
         {loading ? (
-          <div className="h-96 flex items-center justify-center font-mono text-[10px] uppercase tracking-widest text-neutral-600">
-            Loading collection...
+          <div className="h-96 flex items-center justify-center">
+            <span className="font-mono text-[10px] uppercase tracking-[0.5em] text-neutral-800 animate-pulse">Syncing...</span>
           </div>
         ) : products.length === 0 ? (
-          <div className="h-96 flex flex-col items-center justify-center space-y-4">
-            <div className="font-mono text-[10px] uppercase tracking-widest text-neutral-600 text-center px-4">No pieces found in this series</div>
+          <div className="h-96 flex flex-col items-center justify-center space-y-6">
+            <div className="font-mono text-[10px] uppercase tracking-widest text-neutral-600 text-center px-4">No results for your query in this series</div>
             <button 
-              onClick={() => setActiveCategory('all')}
-              className="text-white underline font-mono text-[10px] uppercase tracking-widest"
+              onClick={() => { setActiveCategory('all'); setSearchQuery(''); }}
+              className="text-white underline font-mono text-[10px] uppercase tracking-widest hover:text-neutral-400 transition-colors"
             >
-              Clear filters
+              Reset exploration
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-x-4 md:gap-x-6 gap-y-10 md:gap-y-12">
+          <motion.div 
+            layout
+            className="grid grid-cols-2 lg:grid-cols-4 gap-x-4 md:gap-x-8 gap-y-12 md:gap-y-20"
+          >
             {products.map((product, i) => (
               <ProductCard key={product.id} product={product} index={i} />
             ))}
-          </div>
+          </motion.div>
         )}
       </main>
 
-      <footer className="py-24 border-t border-white/5 flex flex-col items-center gap-4">
-        {logoUrl ? (
-          <img src={logoUrl} alt="Logo" className="h-8 md:h-10 w-auto grayscale opacity-40" />
-        ) : (
-          <div className="text-xl md:text-2xl font-display tracking-tighter uppercase">AURORA</div>
-        )}
-        <p className="text-[10px] font-mono text-neutral-600 uppercase tracking-widest text-center px-4">Minimalist Essentials</p>
+      <footer className="py-24 border-t border-white/5 flex flex-col items-center gap-6">
+        <div className="flex flex-col items-center gap-2">
+            {logoUrl ? (
+              <img src={logoUrl} alt="Logo" className="h-8 md:h-12 w-auto grayscale opacity-40 hover:opacity-100 transition-opacity" />
+            ) : (
+              <div className="text-xl md:text-2xl font-display tracking-tighter uppercase opacity-40">AURORA</div>
+            )}
+            <p className="text-[10px] font-mono text-neutral-700 uppercase tracking-[0.4em] text-center px-4">Architectural Foundations</p>
+        </div>
+        <div className="flex gap-8 text-[8px] font-mono text-neutral-600 uppercase tracking-widest">
+            <a href="#" className="hover:text-white transition-colors">Instagram</a>
+            <a href="#" className="hover:text-white transition-colors">Privacy</a>
+            <a href="#" className="hover:text-white transition-colors">Contact</a>
+        </div>
       </footer>
     </div>
   );
