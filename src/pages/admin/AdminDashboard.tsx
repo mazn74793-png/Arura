@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Routes, Route, Link, useNavigate, useLocation, Navigate } from 'react-router-dom';
+import { motion, AnimatePresence } from 'motion/react';
 import { 
   Package, 
   ShoppingBag, 
@@ -104,13 +105,31 @@ export default function AdminDashboard() {
         </header>
 
         <div className="p-8 overflow-y-auto custom-scrollbar">
-          <Routes>
-            <Route path="/" element={<Navigate to="/admin/products" replace />} />
-            <Route path="/products" element={<ProductManagement />} />
-            <Route path="/orders" element={<OrderManagement />} />
-            <Route path="/staff" element={<AdminManagement />} />
-            <Route path="/settings" element={<SettingsManagement />} />
-          </Routes>
+          <AnimatePresence mode="wait">
+            <Routes location={location} key={location.pathname}>
+              <Route path="/" element={<Navigate to="/admin/products" replace />} />
+              <Route path="/products" element={
+                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.3 }}>
+                  <ProductManagement />
+                </motion.div>
+              } />
+              <Route path="/orders" element={
+                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.3 }}>
+                  <OrderManagement />
+                </motion.div>
+              } />
+              <Route path="/staff" element={
+                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.3 }}>
+                  <AdminManagement />
+                </motion.div>
+              } />
+              <Route path="/settings" element={
+                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.3 }}>
+                  <SettingsManagement />
+                </motion.div>
+              } />
+            </Routes>
+          </AnimatePresence>
         </div>
       </main>
     </div>

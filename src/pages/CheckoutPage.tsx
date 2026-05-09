@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../lib/firebase';
-import { motion } from 'framer-motion';
+import { motion } from 'motion/react';
 import { ChevronLeft, ShoppingBag, CheckCircle2, Trash2 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useCart } from '../context/CartContext';
@@ -20,6 +20,7 @@ export default function CheckoutPage() {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [orderId, setOrderId] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,6 +38,7 @@ export default function CheckoutPage() {
       };
       
       const docRef = await addDoc(collection(db, 'orders'), orderData);
+      setOrderId(docRef.id);
       
       // Send easy email notification via Web3Forms
       const web3Key = import.meta.env.VITE_WEB3FORMS_KEY;
@@ -70,24 +72,57 @@ export default function CheckoutPage() {
   };
 
   if (isSuccess) return (
-    <div className="h-screen bg-black flex flex-col items-center justify-center space-y-8 p-6 text-center">
+    <div className="min-h-screen bg-black flex flex-col items-center justify-center p-6 text-center">
       <motion.div
         initial={{ scale: 0.8, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
-        className="text-white flex flex-col items-center space-y-4"
+        className="max-w-md w-full bg-neutral-900 border border-white/5 p-12 text-center space-y-10 backdrop-blur-2xl"
       >
-        <CheckCircle2 className="w-20 h-20 text-white" strokeWidth={1} />
-        <h1 className="text-4xl font-display tracking-tighter">ORDER SECURED</h1>
-        <p className="text-neutral-500 font-mono text-[10px] uppercase tracking-widest leading-relaxed max-w-sm">
-          Your request has been transmitted to our workshop. We will notify you via phone once the verification is complete.
-        </p>
+        <div className="space-y-6">
+          <CheckCircle2 className="w-16 h-16 text-white mx-auto stroke-[1]" />
+          <div className="space-y-2">
+            <h1 className="text-4xl font-display uppercase tracking-tight">Order Secured</h1>
+            <p className="text-[10px] font-mono text-neutral-500 uppercase tracking-widest leading-relaxed">
+              Your acquisition has been logged in the Aurora archives. A summary will be sent to your terminal.
+            </p>
+          </div>
+        </div>
+
+        <div className="bg-black/50 border border-white/5 p-6 space-y-4">
+          <span className="text-[8px] font-mono text-neutral-600 uppercase tracking-widest">Order Reference (Save This)</span>
+          <div className="flex flex-col gap-4">
+            <div className="text-lg font-mono text-white tracking-widest bg-white/5 p-4 select-all">
+              {orderId}
+            </div>
+            <button 
+              onClick={() => {
+                if (orderId) {
+                  navigator.clipboard.writeText(orderId);
+                  alert('Reference copied to clipboard');
+                }
+              }}
+              className="text-[10px] font-mono text-neutral-400 hover:text-white transition-colors uppercase tracking-widest underline underline-offset-4"
+            >
+              Copy to Clipboard
+            </button>
+          </div>
+        </div>
+
+        <div className="space-y-4 pt-4">
+          <button 
+            onClick={() => navigate('/shop')}
+            className="w-full py-5 bg-white text-black font-mono font-bold uppercase tracking-[0.4em] hover:bg-neutral-200 transition-colors text-[10px]"
+          >
+            Return to Collection
+          </button>
+          <button 
+            onClick={() => navigate('/track')}
+            className="w-full py-5 border border-white/10 text-white font-mono uppercase tracking-[0.4em] hover:bg-white hover:text-black transition-all text-[10px]"
+          >
+            Track Trajectory
+          </button>
+        </div>
       </motion.div>
-      <button 
-        onClick={() => navigate('/shop')}
-        className="px-8 py-3 border border-white/20 hover:border-white transition-all text-white font-mono text-[10px] uppercase tracking-widest"
-      >
-        Return to Collection
-      </button>
     </div>
   );
 

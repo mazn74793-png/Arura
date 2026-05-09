@@ -80,6 +80,19 @@
       },
       "required": ["productId"]
     },
+    "Review": {
+      "title": "Review",
+      "description": "A product review from a customer",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "userName": { "type": "string" },
+        "rating": { "type": "number" },
+        "comment": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["rating", "comment"]
+    },
     "Notification": {
       "title": "Notification",
       "description": "Notification sent to a customer",
@@ -99,6 +112,16 @@
       "properties": {
         "landingVideoUrl": { "type": "string" },
         "logoUrl": { "type": "string" },
+        "socialLinks": { 
+          "type": "object",
+          "properties": {
+            "instagram": { "type": "string" },
+            "facebook": { "type": "string" },
+            "twitter": { "type": "string" },
+            "whatsapp": { "type": "string" }
+          }
+        },
+        "contactEmail": { "type": "string" },
         "updatedAt": { "type": "string" }
       }
     }
@@ -131,6 +154,10 @@
     "/users/{userId}/wishlist/{productId}": {
       "schema": "WishlistItem",
       "description": "User's saved products"
+    },
+    "/products/{productId}/reviews/{reviewId}": {
+      "schema": "Review",
+      "description": "Product reviews"
     }
   }
 }

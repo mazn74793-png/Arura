@@ -1,11 +1,13 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useState, useEffect } from 'react';
+import { AnimatePresence, motion } from 'motion/react';
 import LandingPage from './pages/LandingPage';
 import ShopPage from './pages/ShopPage';
 import ProductDetailsPage from './pages/ProductDetailsPage';
 import CheckoutPage from './pages/CheckoutPage';
 import AuthPage from './pages/AuthPage';
 import ProfilePage from './pages/ProfilePage';
+import OrderTrackingPage from './pages/OrderTrackingPage';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import { CartProvider } from './context/CartContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
@@ -13,6 +15,7 @@ import CartDrawer from './components/CartDrawer';
 
 function AppRoutes() {
   const { isAdmin, loading, user } = useAuth();
+  const location = useLocation();
 
   if (loading) {
     return (
@@ -23,20 +26,55 @@ function AppRoutes() {
   }
 
   return (
-    <Routes>
-      <Route path="/" element={<LandingPage />} />
-      <Route path="/shop" element={<ShopPage />} />
-      <Route path="/product/:id" element={<ProductDetailsPage />} />
-      <Route path="/checkout" element={<CheckoutPage />} />
-      <Route path="/auth" element={user ? <Navigate to="/profile" /> : <AuthPage />} />
-      <Route path="/profile" element={user ? <ProfilePage /> : <Navigate to="/auth" />} />
-      
-      {/* Admin Routes */}
-      <Route 
-        path="/admin/*" 
-        element={isAdmin ? <AdminDashboard /> : <Navigate to="/auth" />} 
-      />
-    </Routes>
+    <AnimatePresence mode="wait">
+      <Routes location={location} key={location.pathname}>
+        <Route path="/" element={
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
+            <LandingPage />
+          </motion.div>
+        } />
+        <Route path="/shop" element={
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
+            <ShopPage />
+          </motion.div>
+        } />
+        <Route path="/product/:id" element={
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
+            <ProductDetailsPage />
+          </motion.div>
+        } />
+        <Route path="/checkout" element={
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
+            <CheckoutPage />
+          </motion.div>
+        } />
+        <Route path="/track" element={
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
+            <OrderTrackingPage />
+          </motion.div>
+        } />
+        <Route path="/auth" element={
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
+            {user ? <Navigate to="/profile" /> : <AuthPage />}
+          </motion.div>
+        } />
+        <Route path="/profile" element={
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
+            {user ? <ProfilePage /> : <Navigate to="/auth" />}
+          </motion.div>
+        } />
+        
+        {/* Admin Routes */}
+        <Route 
+          path="/admin/*" 
+          element={
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
+              {isAdmin ? <AdminDashboard /> : <Navigate to="/auth" />}
+            </motion.div>
+          } 
+        />
+      </Routes>
+    </AnimatePresence>
   );
 }
 

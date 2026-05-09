@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { 
   onAuthStateChanged, 
   User as FirebaseUser,
@@ -13,7 +13,7 @@ import {
   serverTimestamp,
   collection,
   onSnapshot,
-  query,
+  getDocFromServer,
   deleteDoc
 } from 'firebase/firestore';
 import { auth, db } from '../lib/firebase';
@@ -45,60 +45,100 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [wishlist, setWishlist] = useState<string[]>([]);
+  const unsubWishlistRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      setUser(firebaseUser);
-      
-      if (firebaseUser) {
-        // Sync user profile
-        const userRef = doc(db, 'users', firebaseUser.uid);
-        let userSnap;
-        try {
-          userSnap = await getDoc(userRef);
-        } catch (error) {
-          handleFirestoreError(error, OperationType.GET, `users/${firebaseUser.uid}`);
-          return;
+    // Test Connection as per guidelines
+    async function testConnection() {
+      try {
+        await getDocFromServer(doc(db, 'test', 'connection'));
+      } catch (error) {
+        if(error instanceof Error && error.message.includes('the client is offline')) {
+          console.error("Please check your Firebase configuration.");
         }
-        
-        if (!userSnap.exists()) {
-          const newProfile: UserProfile = {
-            uid: firebaseUser.uid,
-            email: firebaseUser.email,
-            displayName: firebaseUser.displayName,
-            photoURL: firebaseUser.photoURL,
-            role: 'user'
-          };
-          try {
-            await setDoc(userRef, {
-              ...newProfile,
-              createdAt: serverTimestamp()
-            });
-          } catch (error) {
-            handleFirestoreError(error, OperationType.WRITE, `users/${firebaseUser.uid}`);
-          }
-          setProfile(newProfile);
-        } else {
-          setProfile(userSnap.data() as UserProfile);
-        }
-
-        // Listen to wishlist
-        const wishlistRef = collection(db, 'users', firebaseUser.uid, 'wishlist');
-        const unsubWishlist = onSnapshot(wishlistRef, (snap) => {
-          setWishlist(snap.docs.map(doc => doc.id));
-        }, (error) => {
-          handleFirestoreError(error, OperationType.GET, `users/${firebaseUser.uid}/wishlist`);
-        });
-
-        return () => unsubWishlist();
-      } else {
-        setProfile(null);
-        setWishlist([]);
       }
-      setLoading(false);
+    }
+    testConnection();
+
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      try {
+        setUser(firebaseUser);
+        
+        // Clean up previous wishlist subscription
+        if (unsubWishlistRef.current) {
+          unsubWishlistRef.current();
+          unsubWishlistRef.current = null;
+        }
+
+        if (firebaseUser) {
+          // Sync user profile
+          const userRef = doc(db, 'users', firebaseUser.uid);
+          let userSnap;
+          try {
+            userSnap = await getDoc(userRef);
+          } catch (error) {
+            handleFirestoreError(error, OperationType.GET, `users/${firebaseUser.uid}`);
+            // If permissions fail, we still want to show the app (maybe limited access)
+            userSnap = null;
+          }
+          
+          const isAdminEmail = firebaseUser.email === "motaem23y@gmail.com";
+          
+          if (userSnap && !userSnap.exists()) {
+            const newProfile: UserProfile = {
+              uid: firebaseUser.uid,
+              email: firebaseUser.email,
+              displayName: firebaseUser.displayName,
+              photoURL: firebaseUser.photoURL,
+              role: isAdminEmail ? 'admin' : 'user'
+            };
+            try {
+              await setDoc(userRef, {
+                ...newProfile,
+                createdAt: serverTimestamp()
+              });
+            } catch (error) {
+              handleFirestoreError(error, OperationType.WRITE, `users/${firebaseUser.uid}`);
+            }
+            setProfile(newProfile);
+          } else if (userSnap) {
+            const currentProfile = userSnap.data() as UserProfile;
+            // Auto-upgrade if email matches but role isn't admin
+            if (isAdminEmail && currentProfile.role !== 'admin') {
+              try {
+                await setDoc(userRef, { role: 'admin' }, { merge: true });
+                setProfile({ ...currentProfile, role: 'admin' });
+              } catch (e) {
+                console.error("Failed to auto-upgrade admin", e);
+                setProfile(currentProfile);
+              }
+            } else {
+              setProfile(currentProfile);
+            }
+          }
+
+          // Listen to wishlist
+          const wishlistRef = collection(db, 'users', firebaseUser.uid, 'wishlist');
+          unsubWishlistRef.current = onSnapshot(wishlistRef, (snap) => {
+            setWishlist(snap.docs.map(doc => doc.id));
+          }, (error) => {
+            handleFirestoreError(error, OperationType.GET, `users/${firebaseUser.uid}/wishlist`);
+          });
+        } else {
+          setProfile(null);
+          setWishlist([]);
+        }
+      } catch (error) {
+        console.error("Auth sync error:", error);
+      } finally {
+        setLoading(false);
+      }
     });
 
-    return () => unsubscribe();
+    return () => {
+      unsubscribe();
+      if (unsubWishlistRef.current) unsubWishlistRef.current();
+    };
   }, []);
 
   const loginWithGoogle = async () => {

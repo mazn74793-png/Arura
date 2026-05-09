@@ -96,6 +96,13 @@ service cloud.firestore {
       }
     }
 
+    match /products/{productId}/reviews/{reviewId} {
+      allow read: if true;
+      allow create: if isSignedIn() && incoming().userId == request.auth.uid && 
+                    incoming().rating >= 1 && incoming().rating <= 5;
+      allow update, delete: if isAdmin() || (isSignedIn() && existing().userId == request.auth.uid);
+    }
+
     match /notifications/{notificationId} {
       allow read: if true; // Notifications could be read by customers if they have the ID
       allow create: if isAdmin() && isValidId(notificationId);

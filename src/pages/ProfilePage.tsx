@@ -1,16 +1,24 @@
 import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion/react';
 import { useAuth } from '../context/AuthContext';
 import { db } from '../lib/firebase';
 import { collection, query, where, getDocs, orderBy } from 'firebase/firestore';
 import { useNavigate } from 'react-router-dom';
 import { User, ShoppingBag, Heart, LogOut, ChevronRight, Package, Calendar } from 'lucide-react';
 import { Product } from '../types';
+import { handleFirestoreError, OperationType } from '../lib/firestoreErrorHandler';
 
 export default function ProfilePage() {
-  const { profile, logout, wishlist, toggleWishlist } = useAuth();
+  const { profile, logout, wishlist, toggleWishlist, isAdmin } = useAuth();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<'wishlist' | 'orders'>('wishlist');
+  const [activeTab, setActiveTab] = useState<'wishlist' | 'orders' | 'admin'>(isAdmin ? 'admin' : 'wishlist');
+
+  useEffect(() => {
+    if (isAdmin && activeTab !== 'admin') {
+      // Auto-switch to admin on first load if admin
+      setActiveTab('admin');
+    }
+  }, [isAdmin]);
   const [wishlistProducts, setWishlistProducts] = useState<Product[]>([]);
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -39,14 +47,17 @@ export default function ProfilePage() {
         // Fetch Orders
         const ordersQ = query(
           collection(db, 'orders'), 
-          where('email', '==', profile.email),
-          orderBy('createdAt', 'desc')
+          where('email', '==', profile.email)
+          // Removed orderBy to avoid requiring a composite index in production/preview
         );
         const ordersSnap = await getDocs(ordersQ);
-        setOrders(ordersSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+        const ordersList = ordersSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        // Sort client-side instead
+        ordersList.sort((a: any, b: any) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+        setOrders(ordersList);
 
       } catch (error) {
-        console.error("Error fetching profile data:", error);
+        handleFirestoreError(error, OperationType.LIST, 'orders');
       } finally {
         setLoading(false);
       }
@@ -109,7 +120,16 @@ export default function ProfilePage() {
 
         {/* Tabs */}
         <div className="space-y-8">
-          <div className="flex gap-12 border-b border-white/5">
+          <div className="flex gap-12 border-b border-white/5 overflow-x-auto no-scrollbar">
+            {isAdmin && (
+              <button 
+                onClick={() => setActiveTab('admin')}
+                className={`pb-4 text-[10px] font-mono uppercase tracking-[0.3em] transition-all relative ${activeTab === 'admin' ? 'text-white' : 'text-neutral-500'}`}
+              >
+                Command Center
+                {activeTab === 'admin' && <motion.div layoutId="tab" className="absolute bottom-0 left-0 right-0 h-px bg-white" />}
+              </button>
+            )}
             <button 
               onClick={() => setActiveTab('wishlist')}
               className={`pb-4 text-[10px] font-mono uppercase tracking-[0.3em] transition-all relative ${activeTab === 'wishlist' ? 'text-white' : 'text-neutral-500'}`}
@@ -131,7 +151,28 @@ export default function ProfilePage() {
               <div className="flex items-center justify-center h-64 text-neutral-800 font-mono text-[10px] uppercase tracking-widest animate-pulse">Syncing Database...</div>
             ) : (
               <AnimatePresence mode="wait">
-                {activeTab === 'wishlist' ? (
+                {activeTab === 'admin' ? (
+                  <motion.div 
+                    key="admin-shortcut"
+                    initial={{ opacity: 0, scale: 0.98 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="p-12 border border-white/10 bg-neutral-900/50 text-center space-y-8"
+                  >
+                    <div className="space-y-4">
+                      <h3 className="text-2xl font-display uppercase tracking-tight">Administrative Access</h3>
+                      <p className="text-[10px] font-mono text-neutral-500 uppercase tracking-widest max-w-xs mx-auto">
+                        Global control over inventory, logistics, and user registries.
+                      </p>
+                    </div>
+                    <button 
+                      onClick={() => navigate('/admin')}
+                      className="px-12 py-5 bg-white text-black font-mono font-bold text-[10px] uppercase tracking-widest hover:bg-neutral-200 transition-colors"
+                    >
+                      Enter Control Panel
+                    </button>
+                  </motion.div>
+                ) : activeTab === 'wishlist' ? (
                   <motion.div 
                     key="wishlist"
                     initial={{ opacity: 0, y: 10 }}
@@ -204,13 +245,32 @@ export default function ProfilePage() {
                               </div>
                             </div>
                             <div className="flex items-center gap-6 text-[10px] font-mono text-neutral-500">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-neutral-700">REF:</span> 
+                                  <button 
+                                    onClick={() => {
+                                      navigator.clipboard.writeText(order.id);
+                                      alert('Order Reference copied to clipboard');
+                                    }}
+                                    className="hover:text-white transition-colors"
+                                  >
+                                    {order.id.toUpperCase()}
+                                  </button>
+                                </div>
                                 <div className="flex items-center gap-2"><Calendar className="w-3 h-3" /> {order.createdAt?.toDate().toLocaleDateString()}</div>
                                 <div className="flex items-center gap-2"><ShoppingBag className="w-3 h-3" /> {order.items.length} Items</div>
                             </div>
                           </div>
                           <div className="flex flex-col items-end justify-between gap-4">
-                            <span className="text-xl font-display">${order.total}</span>
-                            <button className="text-[8px] font-mono uppercase tracking-[0.3em] px-6 py-3 border border-white/10 hover:bg-white hover:text-black transition-all">Details</button>
+                            <span className="text-xl font-display text-white">${order.total}</span>
+                            <button 
+                              onClick={() => {
+                                navigate('/track');
+                              }}
+                              className="text-[8px] font-mono uppercase tracking-[0.3em] px-6 py-3 border border-white/10 hover:bg-white hover:text-black transition-all"
+                            >
+                              Track Status
+                            </button>
                           </div>
                         </div>
                       ))
@@ -221,6 +281,23 @@ export default function ProfilePage() {
             )}
           </div>
         </div>
+        {/* External Tracking Link */}
+        <section className="py-16 border-t border-white/5 space-y-8">
+           <div className="flex flex-col md:flex-row justify-between items-center gap-6">
+              <div className="space-y-2 text-center md:text-left">
+                <h3 className="text-xl font-display uppercase tracking-tight">Order Tracking Protocol</h3>
+                <p className="text-[10px] font-mono text-neutral-500 uppercase tracking-widest">
+                  Track any acquisition using a valid reference ID.
+                </p>
+              </div>
+              <button 
+                onClick={() => navigate('/track')}
+                className="px-8 py-4 border border-white/10 text-[10px] font-mono uppercase tracking-[0.3em] hover:bg-white hover:text-black transition-all"
+              >
+                Open Tracker
+              </button>
+           </div>
+        </section>
       </main>
 
       <footer className="py-24 border-t border-white/5 text-center px-6">

@@ -12,6 +12,13 @@ declare global {
 export default function SettingsManagement() {
   const [videoUrl, setVideoUrl] = useState('');
   const [logoUrl, setLogoUrl] = useState('');
+  const [socialLinks, setSocialLinks] = useState({
+    instagram: '',
+    facebook: '',
+    twitter: '',
+    whatsapp: ''
+  });
+  const [contactEmail, setContactEmail] = useState('');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -22,8 +29,11 @@ export default function SettingsManagement() {
         const docRef = doc(db, 'settings', 'global');
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
-          setVideoUrl(docSnap.data().landingVideoUrl || '');
-          setLogoUrl(docSnap.data().logoUrl || '');
+          const data = docSnap.data();
+          setVideoUrl(data.landingVideoUrl || '');
+          setLogoUrl(data.logoUrl || '');
+          if (data.socialLinks) setSocialLinks({ ...socialLinks, ...data.socialLinks });
+          setContactEmail(data.contactEmail || '');
         }
       } catch (error) {
         console.error(error);
@@ -89,6 +99,8 @@ export default function SettingsManagement() {
       await setDoc(doc(db, 'settings', 'global'), {
         landingVideoUrl: videoUrl,
         logoUrl: logoUrl,
+        socialLinks: socialLinks,
+        contactEmail: contactEmail,
         updatedAt: serverTimestamp()
       }, { merge: true });
       alert('Settings updated successfully.');
@@ -203,6 +215,60 @@ export default function SettingsManagement() {
               />
             </div>
           )}
+        </div>
+
+        <hr className="border-white/5" />
+
+        {/* Social & Contact Section */}
+        <div className="space-y-8">
+          <div className="flex items-center gap-4">
+            <div className="p-3 bg-white/5 rounded-xl">
+              <Upload className="w-5 h-5 text-neutral-400" />
+            </div>
+            <div>
+              <h3 className="font-display uppercase">Network & Support</h3>
+              <p className="text-[10px] font-mono text-neutral-600 uppercase tracking-widest">Social links and contact info</p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <label className="text-[10px] font-mono uppercase tracking-widest text-neutral-500">Instagram URL</label>
+              <input 
+                value={socialLinks.instagram}
+                onChange={(e) => setSocialLinks({...socialLinks, instagram: e.target.value})}
+                placeholder="HTTPS://INSTAGRAM.COM/..."
+                className="w-full bg-black border border-white/10 p-4 focus:border-white transition-colors outline-none font-mono text-xs" 
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-[10px] font-mono uppercase tracking-widest text-neutral-500">Facebook URL</label>
+              <input 
+                value={socialLinks.facebook}
+                onChange={(e) => setSocialLinks({...socialLinks, facebook: e.target.value})}
+                placeholder="HTTPS://FACEBOOK.COM/..."
+                className="w-full bg-black border border-white/10 p-4 focus:border-white transition-colors outline-none font-mono text-xs" 
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-[10px] font-mono uppercase tracking-widest text-neutral-500">WhatsApp (Phone Number Only)</label>
+              <input 
+                value={socialLinks.whatsapp}
+                onChange={(e) => setSocialLinks({...socialLinks, whatsapp: e.target.value})}
+                placeholder="201234567890"
+                className="w-full bg-black border border-white/10 p-4 focus:border-white transition-colors outline-none font-mono text-xs" 
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-[10px] font-mono uppercase tracking-widest text-neutral-500">Contact Email</label>
+              <input 
+                value={contactEmail}
+                onChange={(e) => setContactEmail(e.target.value)}
+                placeholder="CONCIERGE@DOMAIN.COM"
+                className="w-full bg-black border border-white/10 p-4 focus:border-white transition-colors outline-none font-mono text-xs" 
+              />
+            </div>
+          </div>
         </div>
 
         <div className="pt-8 border-t border-white/10 flex justify-end">

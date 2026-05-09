@@ -3,9 +3,10 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { Product, Gender } from '../types';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion/react';
 import { ChevronLeft, ChevronRight, Plus, Minus, Info, ShoppingBag, Heart } from 'lucide-react';
 import { cn } from '../lib/utils';
+import ProductReviews from '../components/ProductReviews';
 
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
@@ -170,14 +171,40 @@ export default function ProductDetailsPage() {
           </div>
 
           {/* Details */}
-          <div className="lg:sticky lg:top-32 space-y-8 md:space-y-12">
-            <header className="space-y-3 md:space-y-4">
+          <motion.div 
+            initial="hidden"
+            animate="show"
+            variants={{
+              hidden: { opacity: 0 },
+              show: {
+                opacity: 1,
+                transition: {
+                  staggerChildren: 0.1,
+                  delayChildren: 0.2
+                }
+              }
+            }}
+            className="lg:sticky lg:top-32 space-y-8 md:space-y-12"
+          >
+            <motion.header 
+              variants={{
+                hidden: { opacity: 0, x: 20 },
+                show: { opacity: 1, x: 0 }
+              }}
+              className="space-y-3 md:space-y-4"
+            >
               <p className="text-[10px] font-mono text-neutral-500 uppercase tracking-[0.3em]">{product.category}</p>
               <h1 className="text-3xl md:text-6xl font-display tracking-tighter leading-tight uppercase">{product.name}</h1>
               <p className="text-xl md:text-2xl font-mono">${product.price}</p>
-            </header>
+            </motion.header>
 
-            <div className="space-y-6 md:space-y-8">
+            <motion.div 
+              variants={{
+                hidden: { opacity: 0, y: 10 },
+                show: { opacity: 1, y: 0 }
+              }}
+              className="space-y-6 md:space-y-8"
+            >
               <div className="space-y-3 md:space-y-4">
                 <label className="text-[10px] font-mono uppercase tracking-widest text-neutral-500">Select Gender</label>
                 <div className="flex gap-2 md:gap-4">
@@ -228,9 +255,15 @@ export default function ProductDetailsPage() {
                   </button>
                 </div>
               </div>
-            </div>
+            </motion.div>
 
-            <div className="flex gap-4">
+            <motion.div 
+              variants={{
+                hidden: { opacity: 0, y: 10 },
+                show: { opacity: 1, y: 0 }
+              }}
+              className="flex gap-4"
+            >
               <button 
                 onClick={handleAddToCart}
                 className="flex-1 py-5 bg-white text-black font-mono font-bold uppercase tracking-[0.3em] hover:bg-neutral-200 transition-colors text-[10px] md:text-sm"
@@ -248,9 +281,15 @@ export default function ProductDetailsPage() {
               >
                 <Heart className={cn("w-4 h-4", wishlist.includes(product.id) && "fill-current")} />
               </button>
-            </div>
+            </motion.div>
 
-            <div className="pt-8 md:pt-12 space-y-4 md:space-y-8 border-t border-white/5">
+            <motion.div 
+              variants={{
+                hidden: { opacity: 0, y: 10 },
+                show: { opacity: 1, y: 0 }
+              }}
+              className="pt-8 md:pt-12 space-y-4 md:space-y-8 border-t border-white/5"
+            >
               <div className="flex items-start gap-4">
                 <Info className="w-5 h-5 text-neutral-500 mt-1" />
                 <div className="space-y-3">
@@ -266,9 +305,12 @@ export default function ProductDetailsPage() {
                   <div className="p-4 border border-white/5">Sync with Essentials</div>
                   <div className="p-4 border border-white/5">Limited Edition</div>
               </div>
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
         </div>
+
+        {/* Reviews Section */}
+        {product && <ProductReviews productId={product.id} />}
       </main>
     </div>
   );

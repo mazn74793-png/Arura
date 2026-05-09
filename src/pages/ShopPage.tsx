@@ -3,7 +3,7 @@ import { collection, query, where, getDocs, orderBy, doc, getDoc } from 'firebas
 import { db } from '../lib/firebase';
 import { Product, Category } from '../types';
 import ProductCard from '../components/ProductCard';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion/react';
 import { useNavigate } from 'react-router-dom';
 import { ShoppingBag, ChevronLeft, Search, X, User } from 'lucide-react';
 import { useCart } from '../context/CartContext';

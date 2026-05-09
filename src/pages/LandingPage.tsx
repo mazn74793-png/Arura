@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion/react';
 import { useNavigate } from 'react-router-dom';
 import { doc, getDoc, collection, query, limit, getDocs } from 'firebase/firestore';
 import { db } from '../lib/firebase';
@@ -17,6 +17,8 @@ export default function LandingPage() {
   const [landingVideoUrl, setLandingVideoUrl] = useState<string | null>(null);
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
+  const [socialLinks, setSocialLinks] = useState<any>(null);
+  const [contactEmail, setContactEmail] = useState<string>('CONCIERGE@AURORA.STUDIO');
   const navigate = useNavigate();
   const { setIsCartOpen, cart } = useCart();
   const { user } = useAuth();
@@ -42,6 +44,8 @@ export default function LandingPage() {
           if (data.landingVideoUrl) setLandingVideoUrl(data.landingVideoUrl);
           else setLandingVideoUrl(defaultVideo);
           if (data.logoUrl) setLogoUrl(data.logoUrl);
+          if (data.socialLinks) setSocialLinks(data.socialLinks);
+          if (data.contactEmail) setContactEmail(data.contactEmail);
         } else {
           setLandingVideoUrl(defaultVideo);
         }
@@ -95,7 +99,8 @@ export default function LandingPage() {
                 onEnded={handleVideoEnd}
                 onError={() => setShowContent(true)}
                 playsInline
-                className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ${isEntering ? 'opacity-100' : 'opacity-0'}`}
+                muted
+                className={`absolute inset-0 w-full h-full object-cover sm:object-contain md:object-cover transition-opacity duration-1000 ${isEntering ? 'opacity-100' : 'opacity-0'}`}
               >
                 <source src={landingVideoUrl} type="video/mp4" />
                 Your browser does not support the video tag.
@@ -152,6 +157,15 @@ export default function LandingPage() {
           </div>
           <div className="flex items-center gap-4 md:gap-8 font-mono text-[10px] md:text-xs uppercase tracking-widest">
             <button onClick={() => navigate('/shop')} className="hover:text-white/60 transition-colors">Shop</button>
+            {user && (
+              <button 
+                onClick={() => navigate('/admin')} 
+                className="hidden md:block text-neutral-500 hover:text-white transition-colors"
+                title="Admin Control"
+              >
+                Admin
+              </button>
+            )}
             <button 
               onClick={() => navigate(user ? '/profile' : '/auth')}
               className="p-2 text-neutral-400 hover:text-white transition-colors"
@@ -279,15 +293,97 @@ export default function LandingPage() {
           </div>
         </main>
 
-        <footer className="p-12 md:p-24 border-t border-white/5 flex flex-col items-center justify-center space-y-8 md:space-y-12">
-           {logoUrl ? (
-             <img src={logoUrl} alt="Logo" className="h-8 md:h-12 w-auto grayscale opacity-40" />
-           ) : (
-             <div className="text-4xl md:text-6xl font-display tracking-tighter">AURORA</div>
-           )}
-           <div className="text-[8px] font-mono tracking-[0.8em] text-neutral-800 uppercase">
-             ©MMXXVI / ALL RIGHTS RESERVED
-           </div>
+        {/* Newsletter Section */}
+        <section className="py-32 px-6 border-y border-white/5 bg-neutral-950/30">
+          <div className="max-w-xl mx-auto text-center space-y-12">
+             <div className="space-y-4">
+                <h3 className="text-3xl font-display uppercase tracking-tight">The Aurora Bulletin</h3>
+                <p className="text-[10px] font-mono text-neutral-500 uppercase tracking-widest leading-relaxed">
+                  Join our internal network for priority access to upcoming drops and conceptual explorations.
+                </p>
+             </div>
+             <form onSubmit={(e) => { e.preventDefault(); alert('Identity synced to bulletin.'); }} className="flex gap-2">
+                <input 
+                  required
+                  type="email"
+                  placeholder="IDENTITY@DOMAIN.COM"
+                  className="flex-1 bg-black/50 border border-white/5 p-5 outline-none focus:border-white transition-colors font-mono text-[10px] uppercase tracking-widest"
+                />
+                <button type="submit" className="px-10 py-5 bg-white text-black font-mono font-bold text-[10px] uppercase tracking-widest hover:bg-neutral-200 transition-colors">
+                  Join
+                </button>
+             </form>
+          </div>
+        </section>
+
+        {/* Footer */}
+        <footer className="py-24 px-6 border-t border-white/5 bg-black">
+          <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-16 md:gap-8">
+            <div className="space-y-8">
+              <div className="text-2xl font-display tracking-tighter uppercase cursor-pointer" onClick={() => navigate('/')}>
+                {logoUrl ? <img src={logoUrl} alt="Aurora" className="h-6 grayscale brightness-200" /> : 'AURORA'}
+              </div>
+              <div className="space-y-4">
+                <p className="text-[10px] font-mono text-neutral-600 uppercase tracking-widest leading-loose max-w-xs">
+                  Architectural minimalist garments for the discerning individual. Designed in London, sourced globally.
+                </p>
+                <div className="text-[8px] font-mono text-neutral-700 uppercase tracking-widest">
+                  Connect: {contactEmail}
+                </div>
+              </div>
+            </div>
+            
+            <div className="space-y-8">
+               <h4 className="text-[10px] font-mono uppercase tracking-[0.4em] text-neutral-500">Inventory</h4>
+               <ul className="space-y-4 text-[10px] font-mono uppercase tracking-widest text-neutral-300">
+                  <li><button onClick={() => navigate('/shop')} className="hover:text-white transition-colors text-left uppercase">Shop All</button></li>
+                  <li><button onClick={() => navigate('/shop')} className="hover:text-white transition-colors text-left uppercase">New Arrivals</button></li>
+                  <li><button onClick={() => navigate('/shop')} className="hover:text-white transition-colors text-left uppercase">Archives</button></li>
+               </ul>
+            </div>
+
+            <div className="space-y-8">
+               <h4 className="text-[10px] font-mono uppercase tracking-[0.4em] text-neutral-500">Concierge</h4>
+               <ul className="space-y-4 text-[10px] font-mono uppercase tracking-widest text-neutral-300">
+                  <li><button onClick={() => navigate('/track')} className="hover:text-white transition-colors text-left uppercase">Track Order</button></li>
+                  <li><button onClick={() => navigate(user ? '/profile' : '/auth')} className="hover:text-white transition-colors text-left uppercase">Account Sync</button></li>
+                  {user && (
+                    <li><button 
+                      onClick={() => navigate('/admin')} 
+                      className="text-white hover:text-white/60 transition-colors text-left uppercase flex items-center gap-2"
+                    >
+                      Control Panel <div className="w-1 h-1 bg-white rounded-full animate-pulse" />
+                    </button></li>
+                  )}
+                  <li><button className="hover:text-white transition-colors text-left uppercase">Returns Protocol</button></li>
+               </ul>
+            </div>
+
+            <div className="space-y-8">
+               <h4 className="text-[10px] font-mono uppercase tracking-[0.4em] text-neutral-500">Foundations</h4>
+               <ul className="space-y-4 text-[10px] font-mono uppercase tracking-widest text-neutral-300">
+                  {socialLinks?.instagram && (
+                    <li><a href={socialLinks.instagram} target="_blank" rel="noreferrer" className="hover:text-white transition-colors uppercase">Instagram</a></li>
+                  )}
+                  {socialLinks?.facebook && (
+                    <li><a href={socialLinks.facebook} target="_blank" rel="noreferrer" className="hover:text-white transition-colors uppercase">Facebook</a></li>
+                  )}
+                   {socialLinks?.whatsapp && (
+                    <li><a href={`https://wa.me/${socialLinks.whatsapp}`} target="_blank" rel="noreferrer" className="hover:text-white transition-colors uppercase">WhatsApp</a></li>
+                  )}
+                  <li><button className="hover:text-white transition-colors text-left uppercase">Privacy Core</button></li>
+               </ul>
+            </div>
+          </div>
+          
+          <div className="max-w-7xl mx-auto pt-24 mt-24 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-8">
+             <div className="text-[10px] font-mono text-neutral-700 uppercase tracking-[0.5em]">AURORA IDENTITY • {new Date().getFullYear()}</div>
+             <div className="flex gap-8 text-neutral-500 font-mono text-[8px] uppercase tracking-widest">
+                <span>Designed for the void</span>
+                <span className="w-px h-3 bg-white/10" />
+                <span>2026 Edition</span>
+             </div>
+          </div>
         </footer>
       </motion.div>
     </div>
