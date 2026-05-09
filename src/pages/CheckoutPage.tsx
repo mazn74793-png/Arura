@@ -6,13 +6,15 @@ import { motion } from 'framer-motion';
 import { ChevronLeft, ShoppingBag, CheckCircle2, Trash2 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useCart } from '../context/CartContext';
+import { useAuth } from '../context/AuthContext';
 
 export default function CheckoutPage() {
   const navigate = useNavigate();
   const { cart, cartTotal, clearCart, removeFromCart } = useCart();
+  const { profile } = useAuth();
   const [form, setForm] = useState({
-    customerName: '',
-    email: '',
+    customerName: profile?.displayName || '',
+    email: profile?.email || '',
     phone: '',
     address: ''
   });

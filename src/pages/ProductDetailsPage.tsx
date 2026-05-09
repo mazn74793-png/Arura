@@ -4,15 +4,17 @@ import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { Product, Gender } from '../types';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, ChevronRight, Plus, Minus, Info, ShoppingBag } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, Minus, Info, ShoppingBag, Heart } from 'lucide-react';
 import { cn } from '../lib/utils';
 
 import { useCart } from '../context/CartContext';
+import { useAuth } from '../context/AuthContext';
 
 export default function ProductDetailsPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { addToCart, setIsCartOpen } = useCart();
+  const { wishlist, toggleWishlist, user } = useAuth();
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedSize, setSelectedSize] = useState<string>('');
@@ -228,12 +230,25 @@ export default function ProductDetailsPage() {
               </div>
             </div>
 
-            <button 
-              onClick={handleAddToCart}
-              className="w-full py-5 bg-white text-black font-mono font-bold uppercase tracking-[0.3em] hover:bg-neutral-200 transition-colors text-[10px] md:text-sm"
-            >
-              Secure Choice
-            </button>
+            <div className="flex gap-4">
+              <button 
+                onClick={handleAddToCart}
+                className="flex-1 py-5 bg-white text-black font-mono font-bold uppercase tracking-[0.3em] hover:bg-neutral-200 transition-colors text-[10px] md:text-sm"
+              >
+                Secure Choice
+              </button>
+              <button 
+                onClick={() => user ? toggleWishlist(product.id) : navigate('/auth')}
+                className={cn(
+                  "px-6 border transition-all duration-500",
+                  wishlist.includes(product.id) 
+                    ? "bg-white text-black border-white" 
+                    : "border-white/10 text-white hover:border-white/30"
+                )}
+              >
+                <Heart className={cn("w-4 h-4", wishlist.includes(product.id) && "fill-current")} />
+              </button>
+            </div>
 
             <div className="pt-8 md:pt-12 space-y-4 md:space-y-8 border-t border-white/5">
               <div className="flex items-start gap-4">

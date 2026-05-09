@@ -1,15 +1,25 @@
 import { useState, useEffect } from 'react';
-import { collection, getDocs, doc, setDoc, deleteDoc, serverTimestamp, query } from 'firebase/firestore';
+import { collection, getDocs, doc, setDoc, updateDoc, deleteDoc, serverTimestamp, query, where } from 'firebase/firestore';
 import { db, auth } from '../../lib/firebase';
-import { Admin } from '../../types';
-import { UserPlus, Shield, Trash2, Mail, Key } from 'lucide-react';
+import { handleFirestoreError, OperationType } from '../../lib/firestoreErrorHandler';
+import { Shield, UserPlus, Trash2, Search, Mail, Loader2 } from 'lucide-react';
 import { cn } from '../../lib/utils';
+import { motion } from 'framer-motion';
+
+interface AuroraUser {
+  uid: string;
+  email: string;
+  displayName: string;
+  role: 'user' | 'admin';
+  createdAt: any;
+}
 
 export default function AdminManagement() {
-  const [admins, setAdmins] = useState<Admin[]>([]);
+  const [admins, setAdmins] = useState<AuroraUser[]>([]);
   const [loading, setLoading] = useState(true);
-  const [newAdmin, setNewAdmin] = useState({ uid: '', email: '', displayName: '' });
-  const [isBootstrapping, setIsBootstrapping] = useState(false);
+  const [emailInput, setEmailInput] = useState('');
+  const [searching, setSearching] = useState(false);
+  const [message, setMessage] = useState<{ text: string, type: 'success' | 'error' } | null>(null);
 
   useEffect(() => {
     fetchAdmins();
@@ -18,55 +28,74 @@ export default function AdminManagement() {
   const fetchAdmins = async () => {
     setLoading(true);
     try {
-      const querySnapshot = await getDocs(collection(db, 'admins'));
-      const adminList = querySnapshot.docs.map(doc => ({ ...doc.data() } as Admin));
+      const q = query(collection(db, 'users'), where('role', '==', 'admin'));
+      const querySnapshot = await getDocs(q);
+      const adminList = querySnapshot.docs.map(doc => ({ ...doc.data() } as AuroraUser));
       setAdmins(adminList);
-      
-      // If no admins, show bootstrap button
-      if (adminList.length === 0) setIsBootstrapping(true);
     } catch (error) {
-      console.error(error);
+      handleFirestoreError(error, OperationType.LIST, 'users');
     } finally {
       setLoading(false);
     }
   };
 
-  const addAdmin = async (e: React.FormEvent) => {
+  const handleGrantAccess = async (e: React.FormEvent) => {
     e.preventDefault();
-    try {
-      await setDoc(doc(db, 'admins', newAdmin.uid), {
-        ...newAdmin,
-        createdAt: serverTimestamp()
-      });
-      setNewAdmin({ uid: '', email: '', displayName: '' });
-      fetchAdmins();
-    } catch (error) {
-      alert("Only existing admins can add new ones.");
-    }
-  };
+    if (!emailInput) return;
+    
+    setSearching(true);
+    setMessage(null);
 
-  const bootstrapFirstAdmin = async () => {
-    if (!auth.currentUser) return;
     try {
-      await setDoc(doc(db, 'admins', auth.currentUser.uid), {
-        uid: auth.currentUser.uid,
-        email: auth.currentUser.email || '',
-        displayName: 'System Root',
-        createdAt: serverTimestamp()
-      });
-      setIsBootstrapping(false);
-      fetchAdmins();
-      window.location.reload(); // Reload to update App state
+      // Find user by email
+      const q = query(collection(db, 'users'), where('email', '==', emailInput));
+      let snap;
+      try {
+        snap = await getDocs(q);
+      } catch (error) {
+        handleFirestoreError(error, OperationType.LIST, 'users');
+        return;
+      }
+
+      if (snap.empty) {
+        // If user not found, we can't promote them yet
+        // In a real app we'd store "Pending Admin" list, but let's keep it simple
+        setMessage({ text: "User with this email not found in Aurora database.", type: 'error' });
+      } else {
+        const userDoc = snap.docs[0];
+        try {
+          await updateDoc(doc(db, 'users', userDoc.id), {
+            role: 'admin',
+            updatedAt: serverTimestamp()
+          });
+        } catch (error) {
+          handleFirestoreError(error, OperationType.UPDATE, `users/${userDoc.id}`);
+        }
+        setMessage({ text: `Access granted to ${emailInput}`, type: 'success' });
+        setEmailInput('');
+        fetchAdmins();
+      }
     } catch (error) {
       console.error(error);
+      setMessage({ text: "Failed to update permissions.", type: 'error' });
+    } finally {
+      setSearching(false);
     }
   };
 
-  const removeAdmin = async (uid: string) => {
+  const revokeAccess = async (uid: string) => {
     if (uid === auth.currentUser?.uid) return alert("Cannot revoke own clearance.");
-    if (confirm('Revoke access for this operator?')) {
-      await deleteDoc(doc(db, 'admins', uid));
-      fetchAdmins();
+    if (confirm('Revoke administrator privileges for this user?')) {
+      try {
+        await updateDoc(doc(db, 'users', uid), {
+          role: 'user',
+          updatedAt: serverTimestamp()
+        });
+        fetchAdmins();
+      } catch (error) {
+        console.error(error);
+        alert("Operation failed.");
+      }
     }
   };
 
@@ -74,88 +103,90 @@ export default function AdminManagement() {
     <div className="max-w-4xl mx-auto space-y-12 pb-24">
       <header className="space-y-4 text-center">
         <Shield className="w-16 h-16 text-white mx-auto" strokeWidth={1} />
-        <h2 className="text-4xl font-display uppercase tracking-tight">Security Clearances</h2>
+        <h2 className="text-4xl font-display uppercase tracking-tight">Access Control</h2>
         <p className="text-[10px] font-mono text-neutral-500 uppercase tracking-widest leading-relaxed">
-          Authorized personnel only. Granting clearance provides full control over inventory and transmissions.
+          Authorized personnel management. Administrators can modify inventory and access all communications.
         </p>
       </header>
 
-      {isBootstrapping && (
-        <div className="bg-white/5 border border-dashed border-white/20 p-12 rounded-3xl text-center space-y-6">
-          <h3 className="text-lg font-display uppercase">No Operators Found</h3>
-          <p className="text-xs font-mono text-neutral-500 uppercase tracking-widest">
-            The system is unmanaged. Claim root access for the current session.
-          </p>
-          <button 
-            onClick={bootstrapFirstAdmin}
-            className="px-12 py-4 bg-white text-black font-mono text-[10px] uppercase font-bold tracking-[0.2em] hover:bg-neutral-200"
-          >
-            Claim Root Access
-          </button>
-        </div>
-      )}
-
       {/* Add Admin Form */}
-      <div className="bg-neutral-900 border border-white/5 p-8 rounded-3xl space-y-8">
-        <h3 className="text-xl font-display uppercase flex items-center gap-4">
-          <UserPlus className="w-5 h-5 text-neutral-500" /> Grant Access
-        </h3>
-        <form onSubmit={addAdmin} className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="bg-neutral-900 border border-white/5 p-8 rounded-3xl space-y-8 backdrop-blur-xl">
+        <div className="flex items-center justify-between">
+          <h3 className="text-xl font-display uppercase flex items-center gap-4">
+            <UserPlus className="w-5 h-5 text-neutral-500" /> Grant Clearance
+          </h3>
+          <span className="text-[8px] font-mono text-neutral-600 uppercase tracking-widest">Protocol: Role Elevation</span>
+        </div>
+        
+        <form onSubmit={handleGrantAccess} className="space-y-6">
           <div className="space-y-2">
-            <label className="text-[10px] font-mono uppercase tracking-widest text-neutral-500">Operation ID (UID)</label>
-            <input 
-              required
-              value={newAdmin.uid}
-              onChange={e => setNewAdmin({...newAdmin, uid: e.target.value})}
-              placeholder="PASTE FIREBASE UID"
-              className="w-full bg-black/50 border border-white/5 p-4 focus:border-white transition-colors outline-none font-mono text-xs" 
-            />
+            <label className="text-[10px] font-mono uppercase tracking-widest text-neutral-500">Target Email Address</label>
+            <div className="flex gap-4">
+              <div className="relative flex-1">
+                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-600" />
+                <input 
+                  required
+                  type="email"
+                  value={emailInput}
+                  onChange={e => setEmailInput(e.target.value)}
+                  placeholder="EX: NAME@AURORA.FOUNDATION"
+                  className="w-full bg-black/50 border border-white/5 p-4 pl-12 focus:border-white transition-colors outline-none font-mono text-xs" 
+                />
+              </div>
+              <button 
+                type="submit"
+                disabled={searching}
+                className="px-8 bg-white text-black font-mono text-[10px] uppercase font-bold tracking-widest hover:bg-neutral-200 transition-colors disabled:opacity-50 flex items-center gap-2"
+              >
+                {searching ? <Loader2 className="w-3 h-3 animate-spin" /> : <Search className="w-3 h-3" />}
+                Authorize
+              </button>
+            </div>
           </div>
-          <div className="space-y-2">
-            <label className="text-[10px] font-mono uppercase tracking-widest text-neutral-500">Email Address</label>
-            <input 
-              required
-              type="email"
-              value={newAdmin.email}
-              onChange={e => setNewAdmin({...newAdmin, email: e.target.value})}
-              placeholder="OFFICIAL EMAIL"
-              className="w-full bg-black/50 border border-white/5 p-4 focus:border-white transition-colors outline-none font-mono text-xs" 
-            />
-          </div>
-          <div className="md:col-span-2 space-y-2 text-right">
-             <button 
-              type="submit"
-              className="px-12 py-4 bg-white text-black font-mono text-[10px] uppercase font-bold tracking-widest hover:bg-neutral-200 transition-colors"
+          
+          {message && (
+            <motion.p 
+              initial={{ opacity: 0 }} 
+              animate={{ opacity: 1 }}
+              className={cn("text-[10px] font-mono uppercase tracking-widest", message.type === 'error' ? 'text-red-500' : 'text-green-500')}
             >
-              Verify & Authorize
-            </button>
-          </div>
+              {message.text}
+            </motion.p>
+          )}
         </form>
       </div>
 
       {/* Admin List */}
-      <div className="space-y-4">
-        <h3 className="text-[10px] font-mono uppercase tracking-[0.3em] text-neutral-500 text-center">Active Operators</h3>
+      <div className="space-y-6">
+        <div className="flex items-center justify-between border-b border-white/5 pb-4">
+          <h3 className="text-[10px] font-mono uppercase tracking-[0.3em] text-neutral-500">Active Controllers</h3>
+          <span className="text-[8px] font-mono text-neutral-700 uppercase tracking-widest">Total: {admins.length}</span>
+        </div>
+        
         <div className="grid grid-cols-1 gap-4">
           {loading ? (
-             <div className="py-12 text-center font-mono text-[10px] text-neutral-500">Verifying personnel...</div>
+             <div className="py-12 text-center font-mono text-[10px] text-neutral-500 flex items-center justify-center gap-3">
+               <Loader2 className="w-4 h-4 animate-spin" /> Syncing Personnel...
+             </div>
+          ) : admins.length === 0 ? (
+            <div className="py-12 text-center font-mono text-[10px] text-neutral-800">No external administrators authorized.</div>
           ) : admins.map(admin => (
-            <div key={admin.uid} className="bg-neutral-900/50 border border-white/5 p-6 rounded-2xl flex items-center justify-between group">
+            <div key={admin.uid} className="bg-neutral-900/50 border border-white/5 p-6 rounded-2xl flex items-center justify-between group hover:border-white/20 transition-all">
               <div className="flex items-center gap-6">
-                <div className="w-12 h-12 bg-white/5 rounded-full flex items-center justify-center border border-white/10 group-hover:border-white/40 transition-colors">
-                  <Shield className="w-5 h-5 text-neutral-500" />
+                <div className="w-12 h-12 bg-white/5 rounded-full flex items-center justify-center border border-white/10 group-hover:border-white/30 transition-colors">
+                  <Shield className={cn("w-5 h-5", admin.uid === auth.currentUser?.uid ? "text-white" : "text-neutral-500")} />
                 </div>
-                <div>
-                  <div className="text-sm font-medium uppercase">{admin.email}</div>
-                  <div className="text-[8px] font-mono text-neutral-600 uppercase tracking-widest">UID: {admin.uid}</div>
+                <div className="space-y-1">
+                  <div className="text-sm font-medium uppercase font-display tracking-wider text-neutral-200">{admin.displayName || 'Unnamed Operator'}</div>
+                  <div className="text-[8px] font-mono text-neutral-600 uppercase tracking-widest">{admin.email}</div>
                 </div>
               </div>
               <div className="flex items-center gap-4">
                 {admin.uid === auth.currentUser?.uid && (
-                  <span className="text-[8px] font-mono px-2 py-1 bg-white text-black uppercase rounded tracking-widest">Self</span>
+                  <span className="text-[8px] font-mono px-3 py-1 bg-white text-black uppercase font-bold tracking-widest">Root</span>
                 )}
                 <button 
-                  onClick={() => removeAdmin(admin.uid)}
+                  onClick={() => revokeAccess(admin.uid)}
                   className="p-3 text-neutral-600 hover:text-red-500 hover:bg-red-500/10 transition-all rounded-xl"
                 >
                   <Trash2 className="w-4 h-4" />

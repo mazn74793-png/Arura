@@ -5,8 +5,9 @@ import { Product, Category } from '../types';
 import ProductCard from '../components/ProductCard';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { ShoppingBag, ChevronLeft, Search, X } from 'lucide-react';
+import { ShoppingBag, ChevronLeft, Search, X, User } from 'lucide-react';
 import { useCart } from '../context/CartContext';
+import { useAuth } from '../context/AuthContext';
 
 export default function ShopPage() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -17,6 +18,7 @@ export default function ShopPage() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const navigate = useNavigate();
   const { setIsCartOpen, cart } = useCart();
+  const { user } = useAuth();
 
   const categories: { id: Category | 'all'; label: string }[] = [
     { id: 'all', label: 'All' },
@@ -102,17 +104,25 @@ export default function ShopPage() {
           )}
         </div>
 
-        <button 
-          onClick={() => setIsCartOpen(true)}
-          className="relative group p-2"
-        >
-          <ShoppingBag className="w-5 h-5 text-white group-hover:scale-110 transition-transform" strokeWidth={1.5} />
-          {cart.length > 0 && (
-            <span className="absolute -top-1 -right-1 w-4 h-4 bg-white text-black text-[8px] font-bold rounded-full flex items-center justify-center">
-              {cart.length}
-            </span>
-          )}
-        </button>
+        <div className="flex items-center gap-6">
+          <button 
+            onClick={() => navigate(user ? '/profile' : '/auth')}
+            className="p-2 text-neutral-500 hover:text-white transition-colors"
+          >
+            <User className="w-5 h-5" strokeWidth={1} />
+          </button>
+          <button 
+            onClick={() => setIsCartOpen(true)}
+            className="relative group p-2"
+          >
+            <ShoppingBag className="w-5 h-5 text-white group-hover:scale-110 transition-transform" strokeWidth={1.5} />
+            {cart.length > 0 && (
+              <span className="absolute -top-1 -right-1 w-4 h-4 bg-white text-black text-[8px] font-bold rounded-full flex items-center justify-center">
+                {cart.length}
+              </span>
+            )}
+          </button>
+        </div>
       </nav>
 
       {/* Search Overlay */}

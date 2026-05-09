@@ -3,9 +3,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { doc, getDoc, collection, query, limit, getDocs } from 'firebase/firestore';
 import { db } from '../lib/firebase';
-import { ChevronDown, ArrowRight, ShoppingBag } from 'lucide-react';
+import { ChevronDown, ArrowRight, ShoppingBag, User as UserIcon } from 'lucide-react';
 import { Product } from '../types';
 import { useCart } from '../context/CartContext';
+import { useAuth } from '../context/AuthContext';
 
 // Global variable to track entry within the same JS session (lost on refresh)
 let hasEnteredThisSession = false;
@@ -18,6 +19,7 @@ export default function LandingPage() {
   const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
   const navigate = useNavigate();
   const { setIsCartOpen, cart } = useCart();
+  const { user } = useAuth();
 
   // Check if user has already entered in this JS session
   useEffect(() => {
@@ -150,7 +152,12 @@ export default function LandingPage() {
           </div>
           <div className="flex items-center gap-4 md:gap-8 font-mono text-[10px] md:text-xs uppercase tracking-widest">
             <button onClick={() => navigate('/shop')} className="hover:text-white/60 transition-colors">Shop</button>
-            <button onClick={() => navigate('/admin')} className="hover:text-white/60 transition-colors">Admin</button>
+            <button 
+              onClick={() => navigate(user ? '/profile' : '/auth')}
+              className="p-2 text-neutral-400 hover:text-white transition-colors"
+            >
+              <UserIcon className="w-5 h-5 md:w-6 md:h-6" strokeWidth={1} />
+            </button>
             <button 
               onClick={() => setIsCartOpen(true)} 
               className="relative p-2 text-neutral-400 hover:text-white transition-colors"

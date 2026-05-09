@@ -12,7 +12,11 @@ service cloud.firestore {
     }
 
     function isAdmin() {
-      return isSignedIn() && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+      return isSignedIn() && 
+        (request.auth.token.email == "motaem23y@gmail.com" ||
+         (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin') ||
+         exists(/databases/$(database)/documents/admins/$(request.auth.uid)));
     }
 
     function incoming() {
@@ -48,6 +52,10 @@ service cloud.firestore {
              data.status in ['pending', 'confirmed', 'shipped', 'delivered', 'cancelled'];
     }
 
+    function isValidUser(data) {
+      return data.email is string && data.role in ['user', 'admin'];
+    }
+
     // --- Collection Rules ---
 
     match /products/{productId} {
@@ -60,7 +68,7 @@ service cloud.firestore {
     }
 
     match /orders/{orderId} {
-      allow read: if isAdmin(); // Only admins read orders in this simplified version
+      allow read: if isAdmin() || (isSignedIn() && resource.data.email == request.auth.token.email);
       allow create: if isValidOrder(incoming()) && isValidId(orderId) &&
                     incoming().status == 'pending'; // New orders must be pending
       allow update: if isAdmin() && (
@@ -74,6 +82,18 @@ service cloud.firestore {
       allow read: if isSignedIn();
       allow create: if isSignedIn() && (request.auth.token.email == "motaem23y@gmail.com" || isAdmin());
       allow update, delete: if isAdmin();
+    }
+
+    match /users/{userId} {
+      allow read: if isSignedIn() && (request.auth.uid == userId || isAdmin());
+      allow create: if isSignedIn() && request.auth.uid == userId && 
+                    isValidUser(incoming()) && incoming().role == 'user';
+      allow update: if (isSignedIn() && request.auth.uid == userId && incoming().role == existing().role) || 
+                    isAdmin();
+      
+      match /wishlist/{productId} {
+        allow read, write: if isSignedIn() && request.auth.uid == userId;
+      }
     }
 
     match /notifications/{notificationId} {
