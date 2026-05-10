@@ -32,7 +32,7 @@ export default function ProductCard({ product, index }: ProductCardProps) {
                 transition={{ duration: 0.6, ease: "easeInOut" }}
                 src={product.images[1]}
                 alt={product.name}
-                className="absolute inset-0 h-full w-full object-cover grayscale brightness-90"
+                className="absolute inset-0 h-full w-full object-cover brightness-90"
                 referrerPolicy="no-referrer"
               />
             ) : (
@@ -43,7 +43,7 @@ export default function ProductCard({ product, index }: ProductCardProps) {
                 exit={{ opacity: 0 }}
                 src={product.images[0]}
                 alt={product.name}
-                className="h-full w-full object-cover transition-transform duration-1000 group-hover:scale-105 grayscale brightness-75 group-hover:brightness-100"
+                className="h-full w-full object-cover transition-transform duration-1000 group-hover:scale-105 brightness-90 group-hover:brightness-100"
                 referrerPolicy="no-referrer"
               />
             )}

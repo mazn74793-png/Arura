@@ -1,21 +1,25 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
-import { getFirestore, doc, getDocFromServer } from 'firebase/firestore';
+import { initializeFirestore, doc, getDocFromServer } from 'firebase/firestore';
 import firebaseConfig from '../../firebase-applet-config.json';
 
 const app = initializeApp(firebaseConfig);
-// Using the specific databaseId from config as required
-export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
+
+// Using initializeFirestore instead of getFirestore to enable long-polling
+// This helps bypass connection issues in restricted network environments (previews)
+export const db = initializeFirestore(app, {
+  experimentalForceLongPolling: true,
+}, firebaseConfig.firestoreDatabaseId);
+
 export const auth = getAuth(app);
 
 // Connectivity check
 async function testConnection() {
   try {
-    await getDocFromServer(doc(db, 'test', 'connection'));
+    const testDoc = await getDocFromServer(doc(db, 'test', 'connection'));
+    console.log("Firestore Connected successfully", testDoc.exists());
   } catch (error) {
-    if (error instanceof Error && error.message.includes('offline')) {
-      console.error("Please check your Firebase configuration or connection.");
-    }
+    console.error("Firestore connection failed:", error);
   }
 }
 testConnection();

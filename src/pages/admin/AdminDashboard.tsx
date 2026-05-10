@@ -59,12 +59,12 @@ export default function AdminDashboard() {
 
       {/* Sidebar */}
       <aside className={cn(
-        "fixed inset-y-0 left-0 z-50 w-64 md:w-72 bg-neutral-950 border-r border-white/5 transition-transform duration-500 ease-in-out lg:relative lg:translate-x-0",
-        !isSidebarOpen && "-translate-x-full"
+        "fixed inset-y-0 left-0 z-[60] w-64 md:w-72 bg-neutral-950 border-r border-white/5 transition-transform duration-500 ease-in-out lg:relative lg:translate-x-0",
+        !isSidebarOpen && "-translate-x-full pointer-events-none lg:pointer-events-auto"
       )}>
         <div className="p-8 border-b border-white/5 flex items-center justify-between">
           <div className="text-2xl font-display tracking-tighter">AURORA<span className="text-[10px] ml-2 text-neutral-500 font-mono tracking-widest uppercase">Admin</span></div>
-          <button onClick={() => setIsSidebarOpen(false)} className="lg:hidden">
+          <button onClick={() => setIsSidebarOpen(false)} className="lg:hidden p-2 -mr-2 text-neutral-400 hover:text-white transition-colors">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -106,18 +106,28 @@ export default function AdminDashboard() {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
-        <header className="h-16 md:h-20 bg-black/50 backdrop-blur-md border-b border-white/5 px-4 md:px-8 flex items-center justify-between sticky top-0 z-30">
-          <button onClick={() => setIsSidebarOpen(true)} className="lg:hidden p-2 -ml-2 rounded-lg hover:bg-white/5">
-            <Menu className="w-5 h-5 md:w-6 h-6" />
-          </button>
-          <div className="text-[10px] md:text-xs font-mono text-neutral-500 uppercase tracking-[0.3em] overflow-hidden truncate px-2">
-            Dashboard / {navItems.find(i => location.pathname === i.path)?.label || 'Overview'}
+      <main className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden bg-black relative">
+        <header className="flex-shrink-0 h-16 md:h-20 bg-black border-b border-white/5 px-4 md:px-8 flex items-center justify-between z-40 relative">
+          <div className="flex items-center gap-4">
+            <button 
+              onClick={(e) => {
+                e.preventDefault();
+                setIsSidebarOpen(true);
+              }} 
+              className="lg:hidden p-3 -ml-3 rounded-xl hover:bg-white/5 transition-colors relative z-[70] cursor-pointer"
+              aria-label="Open Menu"
+            >
+              <Menu className="w-5 h-5 md:w-6 h-6 text-white" />
+            </button>
+            <div className="text-[10px] md:text-xs font-mono text-neutral-500 uppercase tracking-[0.3em] overflow-hidden truncate max-w-[150px] sm:max-w-none">
+              Dashboard / {navItems.find(i => location.pathname === i.path)?.label || 'Overview'}
+            </div>
           </div>
+
           <div className="flex items-center gap-2 md:gap-4">
-            <button className="p-2 hover:bg-white/5 rounded-full relative">
+            <button className="p-3 hover:bg-white/5 rounded-full relative z-50 cursor-pointer">
               <Bell className="w-4 h-4 md:w-5 h-5 text-neutral-400" />
-              <span className="absolute top-1.5 right-1.5 md:top-2 md:right-2 w-1.5 h-1.5 bg-white rounded-full shadow-[0_0_8px_rgba(255,255,255,0.5)]" />
+              <span className="absolute top-2.5 right-2.5 md:top-3 md:right-3 w-1.5 h-1.5 bg-white rounded-full shadow-[0_0_8px_rgba(255,255,255,0.5)]" />
             </button>
           </div>
         </header>
