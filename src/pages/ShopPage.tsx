@@ -18,7 +18,7 @@ export default function ShopPage() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const navigate = useNavigate();
   const { setIsCartOpen, cart } = useCart();
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
 
   const categories: { id: Category | 'all'; label: string }[] = [
     { id: 'all', label: 'All' },

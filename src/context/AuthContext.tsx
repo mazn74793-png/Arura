@@ -45,10 +45,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [wishlist, setWishlist] = useState<string[]>([]);
+  const [adminEmails, setAdminEmails] = useState<string[]>([]);
   const unsubWishlistRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
-    // Test Connection as per guidelines
+    // Listen to global settings for admin list
+    const settingsRef = doc(db, 'settings', 'global');
+    const unsubSettings = onSnapshot(settingsRef, (snap) => {
+      if (snap.exists()) {
+        setAdminEmails(snap.data().adminEmails || []);
+      }
+    });
+
+    // Test Connection
     async function testConnection() {
       try {
         await getDocFromServer(doc(db, 'test', 'connection'));
@@ -78,11 +87,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             userSnap = await getDoc(userRef);
           } catch (error) {
             handleFirestoreError(error, OperationType.GET, `users/${firebaseUser.uid}`);
-            // If permissions fail, we still want to show the app (maybe limited access)
             userSnap = null;
           }
           
-          const isAdminEmail = firebaseUser.email === "motaem23y@gmail.com";
+          // Initial admin check based on hardcoded email OR if they are already in the settings list
+          // Note: we might not have settings yet, but as a fallback the hardcoded one works
+          const isSuperAdmin = firebaseUser.email === "motaem23y@gmail.com";
+          const isAdminInList = firebaseUser.email && adminEmails.includes(firebaseUser.email.toLowerCase());
+          const wantsAdmin = isSuperAdmin || isAdminInList;
           
           if (userSnap && !userSnap.exists()) {
             const newProfile: UserProfile = {
@@ -90,7 +102,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               email: firebaseUser.email,
               displayName: firebaseUser.displayName,
               photoURL: firebaseUser.photoURL,
-              role: isAdminEmail ? 'admin' : 'user'
+              role: wantsAdmin ? 'admin' : 'user'
             };
             try {
               await setDoc(userRef, {
@@ -103,8 +115,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setProfile(newProfile);
           } else if (userSnap) {
             const currentProfile = userSnap.data() as UserProfile;
-            // Auto-upgrade if email matches but role isn't admin
-            if (isAdminEmail && currentProfile.role !== 'admin') {
+            // Auto-upgrade if in admin list but role isn't admin
+            if (wantsAdmin && currentProfile.role !== 'admin') {
               try {
                 await setDoc(userRef, { role: 'admin' }, { merge: true });
                 setProfile({ ...currentProfile, role: 'admin' });
@@ -137,9 +149,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     return () => {
       unsubscribe();
+      unsubSettings();
       if (unsubWishlistRef.current) unsubWishlistRef.current();
     };
-  }, []);
+  }, [adminEmails]);
 
   const loginWithGoogle = async () => {
     const provider = new GoogleAuthProvider();
@@ -171,7 +184,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const isAdmin = profile?.role === 'admin' && (user?.email === "motaem23y@gmail.com");
+  const isAdmin = profile?.role === 'admin' && (
+    (user?.email === "motaem23y@gmail.com") || 
+    (user?.email && adminEmails.includes(user.email.toLowerCase()))
+  );
 
   return (
     <AuthContext.Provider value={{ 
