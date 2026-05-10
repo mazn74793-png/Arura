@@ -17,6 +17,8 @@ export default function ProductManagement() {
     name: '',
     description: '',
     price: '',
+    originalPrice: '',
+    status: 'none' as 'sale' | 'sold' | 'new' | 'none',
     category: 'shirt' as Category,
     gender: 'unisex' as Gender,
     images: [] as string[],
@@ -80,6 +82,7 @@ export default function ProductManagement() {
     const data = {
       ...formData,
       price: parseFloat(formData.price),
+      originalPrice: formData.originalPrice ? parseFloat(formData.originalPrice) : null,
       images: formData.images.filter(img => img.trim() !== ''),
       updatedAt: serverTimestamp()
     };
@@ -107,6 +110,8 @@ export default function ProductManagement() {
       name: '',
       description: '',
       price: '',
+      originalPrice: '',
+      status: 'none',
       category: 'shirt',
       gender: 'unisex',
       images: [],
@@ -134,6 +139,8 @@ export default function ProductManagement() {
       name: product.name,
       description: product.description,
       price: product.price.toString(),
+      originalPrice: product.originalPrice?.toString() || '',
+      status: product.status || 'none',
       category: product.category,
       gender: product.gender,
       images: product.images,
@@ -190,14 +197,39 @@ export default function ProductManagement() {
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <label className="text-[10px] font-mono uppercase tracking-widest text-neutral-500">Price ($)</label>
-                      <input 
-                        required 
-                        type="number"
-                        value={formData.price}
-                        onChange={e => setFormData({...formData, price: e.target.value})}
-                        className="w-full bg-neutral-900 border border-white/5 p-4 focus:border-white transition-colors outline-none font-mono" 
-                      />
+                       <label className="text-[10px] font-mono uppercase tracking-widest text-neutral-500">Current Price ($)</label>
+                       <input 
+                         required 
+                         type="number"
+                         value={formData.price}
+                         onChange={e => setFormData({...formData, price: e.target.value})}
+                         className="w-full bg-neutral-900 border border-white/5 p-4 focus:border-white transition-colors outline-none font-mono" 
+                       />
+                    </div>
+                    <div className="space-y-2">
+                       <label className="text-[10px] font-mono uppercase tracking-widest text-neutral-500">Old Price ($) - OPTIONAL</label>
+                       <input 
+                         type="number"
+                         value={formData.originalPrice}
+                         onChange={e => setFormData({...formData, originalPrice: e.target.value})}
+                         className="w-full bg-neutral-900 border border-white/5 p-4 focus:border-white transition-colors outline-none font-mono" 
+                         placeholder="For strikethrough"
+                       />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-mono uppercase tracking-widest text-neutral-500">Status Badge</label>
+                      <select 
+                        value={formData.status}
+                        onChange={e => setFormData({...formData, status: e.target.value as any})}
+                        className="w-full bg-neutral-900 border border-white/5 p-4 focus:border-white transition-colors outline-none font-mono appearance-none"
+                      >
+                        <option value="none">None</option>
+                        <option value="sale">Sale</option>
+                        <option value="sold">Sold Out</option>
+                        <option value="new">New Entry</option>
+                      </select>
                     </div>
                     <div className="space-y-2">
                       <label className="text-[10px] font-mono uppercase tracking-widest text-neutral-500">Category</label>
@@ -209,6 +241,11 @@ export default function ProductManagement() {
                         <option value="shirt">Shirts</option>
                         <option value="pants">Pants</option>
                         <option value="basic-tops">Basic Tops</option>
+                        <option value="sets">Sets</option>
+                        <option value="sweatshirts">Sweatshirts</option>
+                        <option value="shorts">Shorts</option>
+                        <option value="accessories">Accessories</option>
+                        <option value="jackets">Jackets</option>
                       </select>
                     </div>
                   </div>

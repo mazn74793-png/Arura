@@ -201,9 +201,25 @@ export default function ProductDetailsPage() {
               }}
               className="space-y-3 md:space-y-4"
             >
-              <p className="text-[10px] font-mono text-neutral-500 uppercase tracking-[0.3em]">{product.category}</p>
+              <div className="flex justify-between items-start">
+                <p className="text-[10px] font-mono text-neutral-500 uppercase tracking-[0.3em]">{product.category}</p>
+                {product.status && product.status !== 'none' && (
+                  <span className={`px-3 py-1 text-[8px] font-mono uppercase tracking-widest ${
+                    product.status === 'sold' ? 'bg-red-500 text-white' : 
+                    product.status === 'sale' ? 'bg-amber-500 text-black' : 
+                    'bg-blue-500 text-white'
+                  }`}>
+                    {product.status === 'sold' ? 'Sold Out' : product.status === 'sale' ? 'Sale' : 'New Entry'}
+                  </span>
+                )}
+              </div>
               <h1 className="text-3xl md:text-6xl font-display tracking-tighter leading-tight uppercase">{product.name}</h1>
-              <p className="text-xl md:text-2xl font-mono">${product.price}</p>
+              <div className="flex items-center gap-4">
+                {product.originalPrice && product.originalPrice > product.price && (
+                  <span className="text-xl md:text-2xl font-mono text-neutral-600 line-through">${product.originalPrice}</span>
+                )}
+                <p className="text-xl md:text-2xl font-mono text-white">${product.price}</p>
+              </div>
             </motion.header>
 
             <motion.div 
@@ -309,12 +325,18 @@ export default function ProductDetailsPage() {
               }}
               className="flex gap-4"
             >
-              <button 
-                onClick={handleAddToCart}
-                className="flex-1 py-5 bg-white text-black font-mono font-bold uppercase tracking-[0.3em] hover:bg-neutral-200 transition-colors text-[10px] md:text-sm"
-              >
-                Secure Choice
-              </button>
+              {product.status === 'sold' ? (
+                <div className="flex-1 py-5 bg-neutral-900 border border-white/10 text-neutral-500 font-mono font-bold uppercase tracking-[0.3em] text-[10px] md:text-sm text-center">
+                  Coming Soon
+                </div>
+              ) : (
+                <button 
+                  onClick={handleAddToCart}
+                  className="flex-1 py-5 bg-white text-black font-mono font-bold uppercase tracking-[0.3em] hover:bg-neutral-200 transition-colors text-[10px] md:text-sm"
+                >
+                  Secure Choice
+                </button>
+              )}
               <button 
                 onClick={() => user ? toggleWishlist(product.id) : navigate('/auth')}
                 className={cn(

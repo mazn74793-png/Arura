@@ -8,8 +8,21 @@
         "name": { "type": "string" },
         "description": { "type": "string" },
         "price": { "type": "number" },
-        "category": { "type": "string", "enum": ["pants", "shirt", "basic-tops"] },
+        "originalPrice": { "type": "number" },
+        "category": { "type": "string", "enum": ["pants", "shirt", "basic-tops", "sets", "sweatshirts", "shorts", "accessories", "jackets"] },
+        "status": { "type": "string", "enum": ["sale", "sold", "new", "none"] },
         "images": { "type": "array", "items": { "type": "string" } },
+        "colors": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": { "type": "string" },
+              "hex": { "type": "string" },
+              "image": { "type": "string" }
+            }
+          }
+        },
         "sizes": { "type": "array", "items": { "type": "string" } },
         "gender": { "type": "string", "enum": ["man", "woman", "unisex"] },
         "createdAt": { "type": "string", "format": "date-time" }

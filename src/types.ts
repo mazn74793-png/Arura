@@ -1,4 +1,4 @@
-export type Category = 'pants' | 'shirt' | 'basic-tops';
+export type Category = 'pants' | 'shirt' | 'basic-tops' | 'sets' | 'sweatshirts' | 'shorts' | 'accessories' | 'jackets';
 export type Gender = 'man' | 'woman' | 'unisex';
 export type OrderStatus = 'pending' | 'confirmed' | 'shipped' | 'delivered' | 'cancelled';
 
@@ -7,6 +7,7 @@ export interface Product {
   name: string;
   description: string;
   price: number;
+  originalPrice?: number;
   category: Category;
   images: string[];
   sizes: string[];
@@ -16,6 +17,7 @@ export interface Product {
     image: string;
   }[];
   gender: Gender;
+  status?: 'sale' | 'sold' | 'new' | 'none';
   createdAt: any;
 }
 

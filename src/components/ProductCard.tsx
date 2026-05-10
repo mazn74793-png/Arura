@@ -22,6 +22,15 @@ export default function ProductCard({ product, index }: ProductCardProps) {
     >
       <Link to={`/product/${product.id}`} className="block space-y-4">
         <div className="relative aspect-[3/4] overflow-hidden bg-neutral-900 border border-white/5">
+          {product.status && product.status !== 'none' && (
+            <div className={`absolute top-4 left-4 z-10 px-3 py-1 text-[8px] font-mono uppercase tracking-widest ${
+              product.status === 'sold' ? 'bg-red-500 text-white' : 
+              product.status === 'sale' ? 'bg-amber-500 text-black' : 
+              'bg-blue-500 text-white'
+            }`}>
+              {product.status === 'sold' ? 'Sold Out' : product.status === 'sale' ? 'Sale' : 'New Arrival'}
+            </div>
+          )}
           <AnimatePresence initial={false}>
             {isHovered && product.images[1] ? (
               <motion.img
@@ -60,7 +69,12 @@ export default function ProductCard({ product, index }: ProductCardProps) {
                 <h3 className="text-xs font-display uppercase tracking-wider text-neutral-400 group-hover:text-white transition-colors duration-300">
                     {product.name}
                 </h3>
-                <span className="text-[10px] font-mono text-white">${product.price}</span>
+                <div className="flex items-center gap-3">
+                  {product.originalPrice && product.originalPrice > product.price && (
+                    <span className="text-[10px] font-mono text-neutral-600 line-through">${product.originalPrice}</span>
+                  )}
+                  <span className="text-[10px] font-mono text-white">${product.price}</span>
+                </div>
             </div>
             <div className="h-px w-0 group-hover:w-full bg-white/20 transition-all duration-700" />
             <p className="text-[10px] font-mono text-neutral-600 uppercase tracking-widest">{product.category}</p>

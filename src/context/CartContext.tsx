@@ -5,6 +5,7 @@ export interface CartItem {
   name: string;
   price: number;
   size: string;
+  color?: string;
   quantity: number;
   gender: string;
   image?: string;
@@ -46,8 +47,12 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const addToCart = (item: CartItem) => {
     setCart((prev) => {
-      // Check if item with same ID and size exists
-      const existing = prev.findIndex(i => i.productId === item.productId && i.size === item.size);
+      // Check if item with same ID, size and color exists
+      const existing = prev.findIndex(i => 
+        i.productId === item.productId && 
+        i.size === item.size && 
+        i.color === item.color
+      );
       if (existing !== -1) {
         const next = [...prev];
         next[existing].quantity += item.quantity;

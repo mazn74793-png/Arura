@@ -25,6 +25,11 @@ export default function ShopPage() {
     { id: 'pants', label: 'Pants' },
     { id: 'shirt', label: 'Shirts' },
     { id: 'basic-tops', label: 'Basic Tops' },
+    { id: 'sets', label: 'Sets' },
+    { id: 'sweatshirts', label: 'Sweatshirts' },
+    { id: 'shorts', label: 'Shorts' },
+    { id: 'accessories', label: 'Accessories' },
+    { id: 'jackets', label: 'Jackets' },
   ];
 
   useEffect(() => {
@@ -188,10 +193,13 @@ export default function ShopPage() {
           </div>
         ) : products.length === 0 ? (
           <div className="h-96 flex flex-col items-center justify-center space-y-6">
-            <div className="font-mono text-[10px] uppercase tracking-widest text-neutral-600 text-center px-4">No results for your query in this series</div>
+            <div className="font-display text-4xl md:text-6xl uppercase tracking-tighter text-white/5 animate-pulse">Coming Soon</div>
+            <div className="font-mono text-[10px] uppercase tracking-widest text-neutral-600 text-center px-4">
+              {activeCategory !== 'all' ? `${activeCategory} collection is being cataloged` : 'No results for your query'}
+            </div>
             <button 
               onClick={() => { setActiveCategory('all'); setSearchQuery(''); }}
-              className="text-white underline font-mono text-[10px] uppercase tracking-widest hover:text-neutral-400 transition-colors"
+              className="text-white border border-white/10 px-8 py-3 font-mono text-[10px] uppercase tracking-widest hover:bg-white hover:text-black transition-all"
             >
               Reset exploration
             </button>

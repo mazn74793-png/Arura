@@ -40,8 +40,11 @@ service cloud.firestore {
       return data.name is string && data.name.size() > 0 && data.name.size() <= 200 &&
              data.description is string && data.description.size() <= 2000 &&
              data.price is number && data.price > 0 &&
-             data.category in ['pants', 'shirt', 'basic-tops'] &&
-             data.images is list && data.images.size() > 0 &&
+             (data.originalPrice == null || (data.originalPrice is number && data.originalPrice >= 0)) &&
+             data.category in ['pants', 'shirt', 'basic-tops', 'sets', 'sweatshirts', 'shorts', 'accessories', 'jackets'] &&
+             data.images is list && data.images.size() <= 5 &&
+             (data.colors == null || data.colors is list) &&
+             (data.status == null || data.status in ['sale', 'sold', 'new', 'none']) &&
              data.sizes is list && data.sizes.size() > 0 &&
              data.gender in ['man', 'woman', 'unisex'] &&
              data.updatedAt == request.time;
@@ -73,7 +76,7 @@ service cloud.firestore {
       allow read: if true;
       allow create: if isAdmin() && isValidProduct(incoming()) && incoming().createdAt == request.time && isValidId(productId);
       allow update: if isAdmin() && isValidProduct(incoming()) && (
-        incoming().diff(existing()).affectedKeys().hasOnly(['name', 'description', 'price', 'category', 'images', 'sizes', 'gender', 'updatedAt']) &&
+        incoming().diff(existing()).affectedKeys().hasOnly(['name', 'description', 'price', 'originalPrice', 'status', 'colors', 'category', 'images', 'sizes', 'gender', 'updatedAt']) &&
         incoming().createdAt == existing().createdAt
       );
       allow delete: if isAdmin();
