@@ -20,7 +20,6 @@ export default function SettingsManagement() {
   });
   const [contactEmail, setContactEmail] = useState('');
   const [automationEmail, setAutomationEmail] = useState('');
-  const [adminEmails, setAdminEmails] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -37,7 +36,6 @@ export default function SettingsManagement() {
           if (data.socialLinks) setSocialLinks({ ...socialLinks, ...data.socialLinks });
           setContactEmail(data.contactEmail || '');
           setAutomationEmail(data.automationEmail || '');
-          setAdminEmails(data.adminEmails || []);
         }
       } catch (error) {
         console.error(error);
@@ -106,7 +104,6 @@ export default function SettingsManagement() {
         socialLinks: socialLinks,
         contactEmail: contactEmail,
         automationEmail: automationEmail,
-        adminEmails: adminEmails.map(e => e.trim().toLowerCase()).filter(e => e !== ''),
         updatedAt: serverTimestamp()
       }, { merge: true });
       alert('Settings updated successfully.');
@@ -274,25 +271,15 @@ export default function SettingsManagement() {
                 className="w-full bg-black border border-white/10 p-4 focus:border-white transition-colors outline-none font-mono text-xs" 
               />
             </div>
-            <div className="space-y-2">
-              <label className="text-[10px] font-mono uppercase tracking-widest text-neutral-500 text-blue-400">Automation Email (for order notifications)</label>
+            <div className="space-y-2 md:col-span-2">
+              <label className="text-[10px] font-mono uppercase tracking-widest text-blue-400">Admin Notification Email (For Orders)</label>
               <input 
                 value={automationEmail}
                 onChange={(e) => setAutomationEmail(e.target.value)}
-                placeholder="ORDERS@AUTOMATION.SERVICE"
+                placeholder="ORDERS@AURORA.SUITE"
                 className="w-full bg-black border border-blue-500/20 p-4 focus:border-blue-400 transition-colors outline-none font-mono text-xs" 
               />
-            </div>
-            <div className="space-y-2 md:col-span-2">
-              <label className="text-[10px] font-mono uppercase tracking-widest text-neutral-500 text-red-500">Admin Staff Emails (comma separated)</label>
-              <textarea 
-                value={adminEmails.join(', ')}
-                onChange={(e) => setAdminEmails(e.target.value.split(','))}
-                placeholder="ADMIN1@AURORA.SUITE, ADMIN2@AURORA.SUITE"
-                rows={3}
-                className="w-full bg-black border border-red-500/20 p-4 focus:border-red-400 transition-colors outline-none font-mono text-xs resize-none" 
-              />
-              <p className="text-[9px] font-mono text-neutral-600 uppercase tracking-widest">Adding an email here grants full administrative access to the platform.</p>
+              <p className="text-[9px] font-mono text-neutral-600 uppercase tracking-widest">This email will receive all new order notifications and customer messages.</p>
             </div>
           </div>
         </div>

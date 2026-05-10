@@ -122,6 +122,8 @@
           }
         },
         "contactEmail": { "type": "string" },
+        "automationEmail": { "type": "string" },
+        "adminEmails": { "type": "array", "items": { "type": "string" } },
         "updatedAt": { "type": "string" }
       }
     }

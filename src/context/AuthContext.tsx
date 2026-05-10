@@ -62,7 +62,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => unsubSettings();
   }, []);
 
-  // 2. Auth State and Profile Sync
+  // 1. Auth State and Profile Sync
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       try {
@@ -128,7 +128,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       unsubscribe();
       if (unsubWishlistRef.current) unsubWishlistRef.current();
     };
-  }, [adminEmails]); // Auth re-evaluates when adminEmails changes
+  }, []);
 
   const loginWithGoogle = async () => {
     const provider = new GoogleAuthProvider();
@@ -151,10 +151,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  // isAdmin is true if:
   // 1. Role in profile is admin
   // 2. OR Email is super admin
-  // 3. OR Email is in staff list
+  // 3. OR Email is in staff list from global settings
   const activeEmail = user?.email?.toLowerCase();
   const isAdmin = !!user && (
     (profile?.role === 'admin') ||

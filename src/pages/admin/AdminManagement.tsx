@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { collection, getDocs, doc, setDoc, updateDoc, deleteDoc, serverTimestamp, query, where } from 'firebase/firestore';
+import { collection, getDocs, getDoc, doc, setDoc, updateDoc, deleteDoc, serverTimestamp, query, where } from 'firebase/firestore';
 import { db, auth } from '../../lib/firebase';
 import { handleFirestoreError, OperationType } from '../../lib/firestoreErrorHandler';
 import { Shield, UserPlus, Trash2, Search, Mail, Loader2 } from 'lucide-react';
@@ -28,12 +28,35 @@ export default function AdminManagement() {
   const fetchAdmins = async () => {
     setLoading(true);
     try {
+      // 1. Get emails from global settings
+      const settingsRef = doc(db, 'settings', 'global');
+      const settingsSnap = await getDoc(settingsRef);
+      const adminEmails: string[] = settingsSnap.exists() ? (settingsSnap.data().adminEmails || []) : [];
+
+      // 2. Get users who have the admin role
       const q = query(collection(db, 'users'), where('role', '==', 'admin'));
       const querySnapshot = await getDocs(q);
-      const adminList = querySnapshot.docs.map(doc => ({ ...doc.data() } as AuroraUser));
-      setAdmins(adminList);
+      const adminProfiles = querySnapshot.docs.map(doc => ({ ...doc.data() } as AuroraUser));
+
+      // 3. Merge: Start with users who haveProfiles
+      const mergedList = [...adminProfiles];
+
+      // 4. Add emails from list that don't have profiles yet
+      adminEmails.forEach(email => {
+        if (!mergedList.some(a => a.email.toLowerCase() === email.toLowerCase())) {
+          mergedList.push({
+            uid: `pending-${email}`,
+            email: email,
+            displayName: 'Pending Authorization',
+            role: 'admin',
+            createdAt: null
+          });
+        }
+      });
+
+      setAdmins(mergedList);
     } catch (error) {
-      handleFirestoreError(error, OperationType.LIST, 'users');
+       console.error(error);
     } finally {
       setLoading(false);
     }
@@ -41,41 +64,41 @@ export default function AdminManagement() {
 
   const handleGrantAccess = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!emailInput) return;
+    const email = emailInput.trim().toLowerCase();
+    if (!email) return;
     
     setSearching(true);
     setMessage(null);
 
     try {
-      // Find user by email
-      const q = query(collection(db, 'users'), where('email', '==', emailInput));
-      let snap;
-      try {
-        snap = await getDocs(q);
-      } catch (error) {
-        handleFirestoreError(error, OperationType.LIST, 'users');
-        return;
+      // 1. Update Global Settings List (Primary source of truth for new/all users)
+      const settingsRef = doc(db, 'settings', 'global');
+      const settingsSnap = await getDoc(settingsRef);
+      const currentEmails: string[] = settingsSnap.exists() ? (settingsSnap.data().adminEmails || []) : [];
+      
+      if (!currentEmails.includes(email)) {
+        await setDoc(settingsRef, {
+          adminEmails: [...currentEmails, email],
+          updatedAt: serverTimestamp()
+        }, { merge: true });
       }
 
-      if (snap.empty) {
-        // If user not found, we can't promote them yet
-        // In a real app we'd store "Pending Admin" list, but let's keep it simple
-        setMessage({ text: "User with this email not found in Aurora database.", type: 'error' });
-      } else {
+      // 2. Try to update existing user profile if they have already logged in
+      const q = query(collection(db, 'users'), where('email', '==', email));
+      const snap = await getDocs(q);
+      
+      if (!snap.empty) {
         const userDoc = snap.docs[0];
-        try {
-          await updateDoc(doc(db, 'users', userDoc.id), {
-            role: 'admin',
-            updatedAt: serverTimestamp()
-          });
-        } catch (error) {
-          handleFirestoreError(error, OperationType.UPDATE, `users/${userDoc.id}`);
-        }
-        setMessage({ text: `Access granted to ${emailInput}`, type: 'success' });
-        alert(`Clearance granted to ${emailInput}`);
-        setEmailInput('');
-        fetchAdmins();
+        await updateDoc(doc(db, 'users', userDoc.id), {
+          role: 'admin',
+          updatedAt: serverTimestamp()
+        });
       }
+
+      setMessage({ text: `Access granted to ${email}`, type: 'success' });
+      alert(`Clearance granted to ${email}`);
+      setEmailInput('');
+      fetchAdmins();
     } catch (error) {
       console.error(error);
       setMessage({ text: "Failed to update permissions.", type: 'error' });
@@ -85,14 +108,29 @@ export default function AdminManagement() {
     }
   };
 
-  const revokeAccess = async (uid: string) => {
+  const revokeAccess = async (uid: string, email?: string) => {
     if (uid === auth.currentUser?.uid) return alert("Cannot revoke own clearance.");
     if (confirm('Revoke administrator privileges for this user?')) {
       try {
+        // 1. Remove from Global Settings List
+        if (email) {
+          const settingsRef = doc(db, 'settings', 'global');
+          const settingsSnap = await getDoc(settingsRef);
+          if (settingsSnap.exists()) {
+            const currentEmails: string[] = settingsSnap.data().adminEmails || [];
+            await updateDoc(settingsRef, {
+              adminEmails: currentEmails.filter(e => e !== email.toLowerCase()),
+              updatedAt: serverTimestamp()
+            });
+          }
+        }
+
+        // 2. Update user profile
         await updateDoc(doc(db, 'users', uid), {
           role: 'user',
           updatedAt: serverTimestamp()
         });
+        
         alert('Privileges revoked.');
         fetchAdmins();
       } catch (error) {
@@ -189,7 +227,7 @@ export default function AdminManagement() {
                   <span className="text-[8px] font-mono px-3 py-1 bg-white text-black uppercase font-bold tracking-widest">Root</span>
                 )}
                 <button 
-                  onClick={() => revokeAccess(admin.uid)}
+                  onClick={() => revokeAccess(admin.uid, admin.email)}
                   className="p-3 text-neutral-600 hover:text-red-500 hover:bg-red-500/10 transition-all rounded-xl"
                 >
                   <Trash2 className="w-4 h-4" />
