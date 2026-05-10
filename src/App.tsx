@@ -7,7 +7,6 @@ import ProductDetailsPage from './pages/ProductDetailsPage';
 import CheckoutPage from './pages/CheckoutPage';
 import AuthPage from './pages/AuthPage';
 import ProfilePage from './pages/ProfilePage';
-import OrderTrackingPage from './pages/OrderTrackingPage';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import { CartProvider } from './context/CartContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
@@ -46,11 +45,6 @@ function AppRoutes() {
         <Route path="/checkout" element={
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
             <CheckoutPage />
-          </motion.div>
-        } />
-        <Route path="/track" element={
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
-            <OrderTrackingPage />
           </motion.div>
         } />
         <Route path="/auth" element={

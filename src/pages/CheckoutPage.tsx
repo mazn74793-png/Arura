@@ -21,6 +21,7 @@ export default function CheckoutPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [orderId, setOrderId] = useState<string | null>(null);
+  const [socialLinks, setSocialLinks] = useState({ whatsapp: '' });
   const [automationEmail, setAutomationEmail] = useState('');
 
   useEffect(() => {
@@ -29,7 +30,9 @@ export default function CheckoutPage() {
         const docRef = doc(db, 'settings', 'global');
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
-          setAutomationEmail(docSnap.data().automationEmail || '');
+          const data = docSnap.data();
+          setAutomationEmail(data.automationEmail || '');
+          if (data.socialLinks) setSocialLinks({ ...socialLinks, ...data.socialLinks });
         }
       } catch (error) {
         console.error("Error fetching settings:", error);
@@ -106,24 +109,24 @@ export default function CheckoutPage() {
           </div>
         </div>
 
-        <div className="bg-black/50 border border-white/5 p-6 space-y-4">
-          <span className="text-[8px] font-mono text-neutral-600 uppercase tracking-widest">Order Reference (Save This)</span>
-          <div className="flex flex-col gap-4">
-            <div className="text-lg font-mono text-white tracking-widest bg-white/5 p-4 select-all">
-              {orderId}
-            </div>
-            <button 
-              onClick={() => {
-                if (orderId) {
-                  navigator.clipboard.writeText(orderId);
-                  alert('Reference copied to clipboard');
-                }
-              }}
-              className="text-[10px] font-mono text-neutral-400 hover:text-white transition-colors uppercase tracking-widest underline underline-offset-4"
-            >
-              Copy to Clipboard
-            </button>
+        <div className="bg-black/50 border border-white/5 p-8 space-y-6">
+          <div className="space-y-2">
+            <h3 className="text-sm font-display uppercase">Support & Logistics</h3>
+            <p className="text-[10px] font-mono text-neutral-500 uppercase tracking-widest leading-relaxed">
+              تواصل مع خدمة العملاء للمزيد من المعلومات حول حالة طلبك
+            </p>
           </div>
+          
+          <button 
+            onClick={() => {
+              const phone = socialLinks.whatsapp || '201018698000'; // Default if not set
+              const text = encodeURIComponent(`Hello Aurora Support, I'm checking on my order ID: ${orderId}`);
+              window.open(`https://wa.me/${phone}?text=${text}`, '_blank');
+            }}
+            className="w-full py-5 bg-[#25D366] text-white font-mono font-bold uppercase tracking-[0.2em] hover:bg-[#128C7E] transition-colors text-[10px] flex items-center justify-center gap-3"
+          >
+            Contact via WhatsApp
+          </button>
         </div>
 
         <div className="space-y-4 pt-4">
@@ -132,12 +135,6 @@ export default function CheckoutPage() {
             className="w-full py-5 bg-white text-black font-mono font-bold uppercase tracking-[0.4em] hover:bg-neutral-200 transition-colors text-[10px]"
           >
             Return to Collection
-          </button>
-          <button 
-            onClick={() => navigate('/track')}
-            className="w-full py-5 border border-white/10 text-white font-mono uppercase tracking-[0.4em] hover:bg-white hover:text-black transition-all text-[10px]"
-          >
-            Track Trajectory
           </button>
         </div>
       </motion.div>

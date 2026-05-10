@@ -362,7 +362,6 @@ export default function LandingPage() {
                   <li><button onClick={() => navigate('/shop')} className="hover:text-white transition-all hover:translate-x-1 flex items-center gap-2">Every Piece <ArrowRight className="w-3 h-3 opacity-0 group-hover:opacity-100" /></button></li>
                   <li><button onClick={() => navigate('/shop')} className="hover:text-white transition-all hover:translate-x-1 flex items-center gap-2">New Releases</button></li>
                   <li><button onClick={() => navigate('/shop')} className="hover:text-white transition-all hover:translate-x-1 flex items-center gap-2">Conceptual Work</button></li>
-                  <li><button onClick={() => navigate('/track')} className="hover:text-white transition-all hover:translate-x-1 flex items-center gap-2">Logistics Hub</button></li>
                 </ul>
               </div>
 

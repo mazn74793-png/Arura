@@ -263,14 +263,6 @@ export default function ProfilePage() {
                           </div>
                           <div className="flex flex-col items-end justify-between gap-4">
                             <span className="text-xl font-display text-white">${order.total}</span>
-                            <button 
-                              onClick={() => {
-                                navigate('/track');
-                              }}
-                              className="text-[8px] font-mono uppercase tracking-[0.3em] px-6 py-3 border border-white/10 hover:bg-white hover:text-black transition-all"
-                            >
-                              Track Status
-                            </button>
                           </div>
                         </div>
                       ))
@@ -281,23 +273,6 @@ export default function ProfilePage() {
             )}
           </div>
         </div>
-        {/* External Tracking Link */}
-        <section className="py-16 border-t border-white/5 space-y-8">
-           <div className="flex flex-col md:flex-row justify-between items-center gap-6">
-              <div className="space-y-2 text-center md:text-left">
-                <h3 className="text-xl font-display uppercase tracking-tight">Order Tracking Protocol</h3>
-                <p className="text-[10px] font-mono text-neutral-500 uppercase tracking-widest">
-                  Track any acquisition using a valid reference ID.
-                </p>
-              </div>
-              <button 
-                onClick={() => navigate('/track')}
-                className="px-8 py-4 border border-white/10 text-[10px] font-mono uppercase tracking-[0.3em] hover:bg-white hover:text-black transition-all"
-              >
-                Open Tracker
-              </button>
-           </div>
-        </section>
       </main>
 
       <footer className="py-24 border-t border-white/5 text-center px-6">
