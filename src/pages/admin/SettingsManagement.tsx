@@ -115,15 +115,15 @@ export default function SettingsManagement() {
   if (loading) return <div className="text-center font-mono text-xs uppercase tracking-widest py-24">Loading settings...</div>;
 
   return (
-    <div className="max-w-4xl mx-auto space-y-12">
-      <header className="space-y-4">
-        <h2 className="text-3xl font-display uppercase tracking-tight">System Settings</h2>
-        <p className="text-[10px] font-mono text-neutral-500 uppercase tracking-widest leading-relaxed">
+    <div className="max-w-4xl mx-auto space-y-8 md:space-y-12 pb-20 md:pb-0">
+      <header className="space-y-4 px-2">
+        <h2 className="text-2xl md:text-3xl font-display uppercase tracking-tight">System Settings</h2>
+        <p className="text-[10px] font-mono text-neutral-500 uppercase tracking-widest leading-relaxed max-w-lg">
           Configure the global behavior and visual assets of the Aurora experience.
         </p>
       </header>
 
-      <div className="bg-neutral-900 border border-white/5 p-8 rounded-3xl space-y-12">
+      <div className="bg-neutral-900 border border-white/5 p-6 md:p-8 rounded-2xl md:rounded-3xl space-y-10 md:space-y-12">
         {/* Logo Section */}
         <div className="space-y-6">
           <div className="flex items-center gap-4">
@@ -136,11 +136,11 @@ export default function SettingsManagement() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
             <div className="p-6 bg-black border border-white/5 rounded-2xl flex flex-col items-center justify-center text-center space-y-4">
                <button 
                 onClick={() => handleCloudinaryUpload('logo')}
-                className="px-8 py-3 bg-neutral-800 hover:bg-neutral-700 text-white font-mono text-[10px] uppercase tracking-widest transition-all"
+                className="w-full md:w-auto px-8 py-3 bg-neutral-800 hover:bg-neutral-700 text-white font-mono text-[10px] uppercase tracking-widest transition-all"
                >
                  Upload Logo
                </button>
@@ -176,12 +176,12 @@ export default function SettingsManagement() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
             <div className="space-y-4">
               <div className="p-6 bg-black border border-white/5 rounded-2xl flex flex-col items-center justify-center text-center space-y-4">
                  <button 
                   onClick={() => handleCloudinaryUpload('video')}
-                  className="px-8 py-3 bg-neutral-800 hover:bg-neutral-700 text-white font-mono text-[10px] uppercase tracking-widest transition-all"
+                  className="w-full md:w-auto px-8 py-3 bg-neutral-800 hover:bg-neutral-700 text-white font-mono text-[10px] uppercase tracking-widest transition-all"
                  >
                    Upload Video
                  </button>
@@ -271,11 +271,11 @@ export default function SettingsManagement() {
           </div>
         </div>
 
-        <div className="pt-8 border-t border-white/10 flex justify-end">
+        <div className="pt-8 border-t border-white/10">
            <button 
             onClick={handleSave}
             disabled={saving || uploading}
-            className="px-12 py-4 bg-white text-black font-mono text-[10px] uppercase font-bold tracking-widest hover:bg-neutral-200 transition-colors flex items-center gap-3 disabled:opacity-50"
+            className="w-full md:w-auto px-12 py-4 bg-white text-black font-mono text-[10px] uppercase font-bold tracking-widest hover:bg-neutral-200 transition-colors flex items-center justify-center gap-3 disabled:opacity-50"
           >
             <Save className="w-4 h-4" /> {saving ? 'Verifying...' : 'Commit Changes'}
           </button>

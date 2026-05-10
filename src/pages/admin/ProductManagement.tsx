@@ -142,30 +142,30 @@ export default function ProductManagement() {
   };
 
   return (
-    <div className="space-y-12">
-      <header className="flex justify-between items-center bg-neutral-900 border border-white/5 p-8 rounded-2xl">
+    <div className="space-y-6 md:space-y-12 pb-20 md:pb-0">
+      <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 bg-neutral-900 border border-white/5 p-6 md:p-8 rounded-2xl">
         <div className="space-y-1">
-          <h2 className="text-2xl font-display uppercase tracking-tight">Collection Inventory</h2>
+          <h2 className="text-xl md:text-2xl font-display uppercase tracking-tight">Collection Inventory</h2>
           <p className="text-[10px] font-mono text-neutral-500 uppercase tracking-widest">{products.length} Items Listed</p>
         </div>
         <button 
           onClick={() => { setIsFormOpen(true); setEditingProduct(null); resetForm(); }}
-          className="flex items-center gap-3 px-6 py-3 bg-white text-black font-mono text-[10px] uppercase font-bold tracking-widest hover:bg-neutral-200 transition-colors"
+          className="w-full sm:w-auto flex items-center justify-center gap-3 px-6 py-4 md:py-3 bg-white text-black font-mono text-[10px] uppercase font-bold tracking-widest hover:bg-neutral-200 transition-colors"
         >
           <Plus className="w-4 h-4" /> Add New Piece
         </button>
       </header>
 
       {isFormOpen && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-6 bg-black/90 backdrop-blur-md">
-          <div className="bg-neutral-950 border border-white/10 w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-3xl animate-in fade-in zoom-in duration-300">
-            <header className="sticky top-0 bg-neutral-950/80 backdrop-blur-md p-8 border-b border-white/5 flex justify-between items-center z-10">
-              <h3 className="text-xl font-display uppercase">{editingProduct ? 'Update Piece' : 'Catalogue New Piece'}</h3>
-              <button onClick={() => setIsFormOpen(false)} className="p-2 hover:bg-white/5 rounded-full"><X className="w-6 h-6" /></button>
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 md:p-6 bg-black/90 backdrop-blur-md">
+          <div className="bg-neutral-950 border border-white/10 w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-2xl md:rounded-3xl animate-in fade-in zoom-in duration-300">
+            <header className="sticky top-0 bg-neutral-950/80 backdrop-blur-md p-6 md:p-8 border-b border-white/5 flex justify-between items-center z-10">
+              <h3 className="text-lg md:text-xl font-display uppercase">{editingProduct ? 'Update Piece' : 'Catalogue New Piece'}</h3>
+              <button onClick={() => setIsFormOpen(false)} className="p-2 hover:bg-white/5 rounded-full"><X className="w-5 h-5 md:w-6 h-6" /></button>
             </header>
 
-            <form onSubmit={handleSubmit} className="p-8 space-y-12">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+            <form onSubmit={handleSubmit} className="p-6 md:p-8 space-y-8 md:space-y-12">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-12">
                 {/* Left Side: Basic Info */}
                 <div className="space-y-8">
                   <div className="space-y-2">
@@ -334,46 +334,48 @@ export default function ProductManagement() {
       )}
 
       {/* Product List */}
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2 gap-4 md:gap-6">
         {loading ? (
           <div className="col-span-full py-24 text-center font-mono text-[10px] text-neutral-500 uppercase tracking-widest">Scanning inventory...</div>
         ) : products.length === 0 ? (
           <div className="col-span-full py-24 text-center font-mono text-[10px] text-neutral-500 uppercase tracking-widest">No pieces archived</div>
         ) : (
           products.map(product => (
-            <div key={product.id} className="bg-neutral-900 border border-white/5 rounded-2xl p-6 flex gap-8 items-center group transition-all hover:bg-neutral-800">
-              <div className="w-24 h-32 bg-black border border-white/5 flex-shrink-0 overflow-hidden rounded-lg">
+            <div key={product.id} className="bg-neutral-900 border border-white/5 rounded-2xl p-4 md:p-6 flex flex-col md:flex-row gap-4 md:gap-8 items-start md:items-center group transition-all hover:bg-neutral-800">
+              <div className="w-full md:w-24 h-48 md:h-32 bg-black border border-white/5 flex-shrink-0 overflow-hidden rounded-lg">
                 <img 
                   src={product.images[0]} 
                   alt="" 
-                  className="w-full h-full object-cover opacity-60 group-hover:opacity-100 transition-opacity" 
+                  className="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity" 
                   referrerPolicy="no-referrer"
                 />
               </div>
-              <div className="flex-1 space-y-2 min-w-0">
-                <div className="flex justify-between items-start">
-                  <div>
+              <div className="flex-1 space-y-2 min-w-0 w-full">
+                <div className="flex justify-between items-start gap-4">
+                  <div className="min-w-0 flex-1">
                     <h4 className="text-lg font-display uppercase truncate">{product.name}</h4>
                     <p className="text-[10px] font-mono text-neutral-500 uppercase tracking-widest">{product.category} / {product.gender}</p>
                   </div>
                   <div className="text-xl font-mono">${product.price}</div>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                   {product.sizes.map(s => <span key={s} className="text-[8px] font-mono px-2 py-1 bg-white/5 text-white/40 border border-white/5 rounded uppercase">{s}</span>)}
                 </div>
               </div>
-              <div className="flex flex-col gap-2">
+              <div className="flex md:flex-col gap-2 w-full md:w-auto mt-4 md:mt-0">
                 <button 
                   onClick={() => openEdit(product)}
-                  className="p-3 bg-white/5 hover:bg-white hover:text-black transition-all rounded-xl"
+                  className="flex-1 md:flex-none p-3 md:p-4 bg-white/5 hover:bg-white hover:text-black transition-all rounded-xl flex items-center justify-center gap-2"
                 >
                   <Edit2 className="w-4 h-4" />
+                  <span className="md:hidden text-[10px] font-mono uppercase font-bold tracking-widest">Edit</span>
                 </button>
                 <button 
                   onClick={() => handleDelete(product.id)}
-                  className="p-3 bg-white/5 hover:bg-red-500 transition-all rounded-xl text-red-500 hover:text-white"
+                  className="flex-1 md:flex-none p-3 md:p-4 bg-white/5 hover:bg-red-500 transition-all rounded-xl text-red-500 hover:text-white flex items-center justify-center gap-2"
                 >
                   <Trash2 className="w-4 h-4" />
+                  <span className="md:hidden text-[10px] font-mono uppercase font-bold tracking-widest">Delete</span>
                 </button>
               </div>
             </div>

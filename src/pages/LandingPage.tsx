@@ -12,9 +12,10 @@ import { useAuth } from '../context/AuthContext';
 let hasEnteredThisSession = false;
 
 export default function LandingPage() {
-  const [isEntering, setIsEntering] = useState(false);
-  const [showContent, setShowContent] = useState(false);
+  const [isEntering, setIsEntering] = useState(hasEnteredThisSession);
+  const [showContent, setShowContent] = useState(hasEnteredThisSession);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
+  const [isFeaturedLoading, setIsFeaturedLoading] = useState(true);
   const [landingVideoUrl, setLandingVideoUrl] = useState<string | null>(null);
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
@@ -22,7 +23,7 @@ export default function LandingPage() {
   const [contactEmail, setContactEmail] = useState<string>('CONCIERGE@AURORA.STUDIO');
   const navigate = useNavigate();
   const { setIsCartOpen, cart } = useCart();
-  const { user } = useAuth();
+  const { user, isAdmin, loading: authLoading } = useAuth();
 
   // Check if user has already entered in this JS session
   useEffect(() => {
@@ -66,6 +67,8 @@ export default function LandingPage() {
         setFeaturedProducts(prods);
       } catch (error) {
         console.error("Error fetching featured products:", error);
+      } finally {
+        setIsFeaturedLoading(false);
       }
     }
 
@@ -86,7 +89,7 @@ export default function LandingPage() {
     hasEnteredThisSession = true;
   };
 
-  if (isInitialLoading) {
+  if (isInitialLoading || authLoading) {
     return (
       <div className="h-screen bg-black flex items-center justify-center">
         <motion.div 
@@ -174,7 +177,7 @@ export default function LandingPage() {
           </div>
           <div className="flex items-center gap-4 md:gap-8 font-mono text-[10px] md:text-xs uppercase tracking-widest">
             <button onClick={() => navigate('/shop')} className="hover:text-white/60 transition-colors">Shop</button>
-            {user && (
+            {isAdmin && (
               <button 
                 onClick={() => navigate('/admin')} 
                 className="hidden md:block text-neutral-500 hover:text-white transition-colors"
@@ -262,7 +265,7 @@ export default function LandingPage() {
                     <img 
                       src={product.images[0]} 
                       alt={product.name}
-                      className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110 grayscale brightness-75 group-hover:brightness-100 group-hover:grayscale-0"
+                      className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110 brightness-90 group-hover:brightness-100"
                       referrerPolicy="no-referrer"
                     />
                     <div className="absolute inset-x-0 bottom-0 p-4 translate-y-full group-hover:translate-y-0 transition-transform duration-500 bg-black/40 backdrop-blur-sm">
@@ -277,7 +280,7 @@ export default function LandingPage() {
               ))}
             </div>
 
-            {featuredProducts.length === 0 && !isInitialLoading && (
+            {featuredProducts.length === 0 && !isFeaturedLoading && (
               <div className="grid grid-cols-1 md:grid-cols-3 gap-1px bg-white/5 border border-white/5">
                 {[
                   { name: 'PANTS', desc: 'Sculpted Silhouettes', img: 'https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?auto=format&fit=crop&q=80&w=800' },
@@ -333,60 +336,77 @@ export default function LandingPage() {
           </div>
         </section>
 
-        <footer className="py-24 px-6 border-t border-white/5 bg-neutral-950">
-          <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-16 md:gap-12">
-            <div className="space-y-8 col-span-1 md:col-span-2">
-              <div className="text-3xl font-display tracking-tighter uppercase cursor-pointer flex items-center gap-3" onClick={() => navigate('/')}>
-                {logoUrl ? <img src={logoUrl} alt="Aurora" className="h-8 grayscale brightness-200" /> : 'AURORA'}
-              </div>
-              <div className="space-y-6">
-                <p className="text-xs font-mono text-neutral-500 uppercase tracking-widest leading-loose max-w-sm">
-                  Architectural minimalist garments for the discerning individual. Designed in London, sourced globally.
-                </p>
-                <div className="flex flex-wrap gap-4 text-[8px] font-bold font-mono text-neutral-400 uppercase tracking-[0.3em]">
-                  <span className="px-3 py-1 border border-white/10">Limited Release</span>
-                  <span className="px-3 py-1 border border-white/10">Global Logistics</span>
-                  <span className="px-3 py-1 border border-white/10">Ethics Verified</span>
+        <footer className="py-32 px-6 border-t border-white/5 bg-[#050505]">
+          <div className="max-w-7xl mx-auto">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-16 md:gap-24 mb-32">
+              <div className="col-span-1 md:col-span-2 space-y-12">
+                <div className="text-4xl font-display tracking-tighter uppercase cursor-pointer flex items-center gap-3" onClick={() => navigate('/')}>
+                  {logoUrl ? <img src={logoUrl} alt="Aurora" className="h-10 grayscale brightness-200" /> : 'AURORA'}
                 </div>
+                <div className="space-y-8">
+                  <p className="text-sm font-mono text-neutral-500 uppercase tracking-[0.2em] leading-loose max-w-md">
+                    Architectural minimalist garments for the discerning individual. Designed in London, sourced globally. We exist in the intersection of form and function.
+                  </p>
+                  <div className="flex flex-wrap gap-3">
+                    <span className="px-4 py-1.5 border border-white/5 text-[8px] font-bold font-mono text-neutral-600 uppercase tracking-[0.3em] hover:border-white/20 transition-colors">V.01.2026</span>
+                    <span className="px-4 py-1.5 border border-white/5 text-[8px] font-bold font-mono text-neutral-600 uppercase tracking-[0.3em] hover:border-white/20 transition-colors">LDN-NYC-TKY</span>
+                    <span className="px-4 py-1.5 border border-white/5 text-[8px] font-bold font-mono text-neutral-600 uppercase tracking-[0.3em] hover:border-white/20 transition-colors">ETHICS_A+</span>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="space-y-10">
+                <h4 className="text-[10px] font-mono uppercase tracking-[0.5em] text-neutral-400 border-b border-white/10 pb-4">Digital Archive</h4>
+                <ul className="space-y-6 text-[11px] font-mono uppercase tracking-[0.3em] text-neutral-500">
+                  <li><button onClick={() => navigate('/shop')} className="hover:text-white transition-all hover:translate-x-1 flex items-center gap-2">Every Piece <ArrowRight className="w-3 h-3 opacity-0 group-hover:opacity-100" /></button></li>
+                  <li><button onClick={() => navigate('/shop')} className="hover:text-white transition-all hover:translate-x-1 flex items-center gap-2">New Releases</button></li>
+                  <li><button onClick={() => navigate('/shop')} className="hover:text-white transition-all hover:translate-x-1 flex items-center gap-2">Conceptual Work</button></li>
+                  <li><button onClick={() => navigate('/track')} className="hover:text-white transition-all hover:translate-x-1 flex items-center gap-2">Logistics Hub</button></li>
+                </ul>
+              </div>
+
+              <div className="space-y-10">
+                <h4 className="text-[10px] font-mono uppercase tracking-[0.5em] text-neutral-400 border-b border-white/10 pb-4">Social Interface</h4>
+                <ul className="space-y-6 text-[11px] font-mono uppercase tracking-[0.3em] text-neutral-500">
+                  {socialLinks?.instagram && (
+                    <li><a href={socialLinks.instagram} target="_blank" rel="noreferrer" className="hover:text-white transition-all flex items-center gap-2">Instagram</a></li>
+                  )}
+                  {socialLinks?.facebook && (
+                    <li><a href={socialLinks.facebook} target="_blank" rel="noreferrer" className="hover:text-white transition-all flex items-center gap-2">Facebook</a></li>
+                  )}
+                  {socialLinks?.whatsapp && (
+                    <li><a href={`https://wa.me/${socialLinks.whatsapp}`} target="_blank" rel="noreferrer" className="hover:text-white transition-all flex items-center gap-2">WhatsApp Direct</a></li>
+                  )}
+                  <li className="pt-4">
+                    <a href={`mailto:${contactEmail}`} className="text-[9px] font-bold text-neutral-300 hover:text-white transition-all break-all tracking-widest bg-white/5 py-3 px-4 block border border-white/5 border-dashed">
+                      {contactEmail}
+                    </a>
+                  </li>
+                </ul>
               </div>
             </div>
             
-            <div className="space-y-8">
-               <h4 className="text-[10px] font-mono uppercase tracking-[0.4em] text-neutral-500 border-b border-white/5 pb-2">Inventory</h4>
-               <ul className="space-y-4 text-[10px] font-mono uppercase tracking-widest text-neutral-400">
-                  <li><button onClick={() => navigate('/shop')} className="hover:text-white transition-all hover:translate-x-1 flex items-center gap-2 uppercase">Shop All <ArrowRight className="w-2 h-2" /></button></li>
-                  <li><button onClick={() => navigate('/shop')} className="hover:text-white transition-all hover:translate-x-1 flex items-center gap-2 uppercase">New Arrivals <ArrowRight className="w-2 h-2" /></button></li>
-                  <li><button onClick={() => navigate('/shop')} className="hover:text-white transition-all hover:translate-x-1 flex items-center gap-2 uppercase">Archives <ArrowRight className="w-2 h-2" /></button></li>
-               </ul>
+            <div className="pt-16 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-12 text-center md:text-left">
+              <div className="space-y-4">
+                <div className="text-[11px] font-mono text-neutral-500 uppercase tracking-[0.6em]">AURORA IDENTITY • {new Date().getFullYear()}</div>
+                <div className="text-[9px] font-mono text-neutral-700 uppercase tracking-[0.4em] max-w-sm leading-relaxed">
+                  Encryption active. Data sovereignty respected. Distributed via the global mesh.
+                </div>
+              </div>
+              
+              <div className="flex flex-wrap justify-center gap-x-10 gap-y-4 text-neutral-600 font-mono text-[9px] uppercase tracking-[0.4em]">
+                <button className="hover:text-white transition-colors">Privacy Framework</button>
+                <button className="hover:text-white transition-colors">Terms of Use</button>
+                <button className="hover:text-white transition-colors">Ethics Manifest</button>
+              </div>
+              
+              <div className="flex items-center gap-4">
+                <div className="w-2 h-2 bg-green-500/20 rounded-full flex items-center justify-center">
+                  <div className="w-1 h-1 bg-green-500 rounded-full animate-pulse" />
+                </div>
+                <span className="text-[8px] font-mono text-neutral-600 uppercase tracking-widest">Global Ops Online</span>
+              </div>
             </div>
-
-            <div className="space-y-8">
-               <h4 className="text-[10px] font-mono uppercase tracking-[0.4em] text-neutral-500 border-b border-white/5 pb-2">Connect</h4>
-               <ul className="space-y-4 text-[10px] font-mono uppercase tracking-widest text-neutral-400">
-                  {socialLinks?.instagram && (
-                    <li><a href={socialLinks.instagram} target="_blank" rel="noreferrer" className="hover:text-white transition-all flex items-center gap-2 uppercase">Instagram</a></li>
-                  )}
-                  {socialLinks?.facebook && (
-                    <li><a href={socialLinks.facebook} target="_blank" rel="noreferrer" className="hover:text-white transition-all flex items-center gap-2 uppercase">Facebook</a></li>
-                  )}
-                  {socialLinks?.whatsapp && (
-                    <li><a href={`https://wa.me/${socialLinks.whatsapp}`} target="_blank" rel="noreferrer" className="hover:text-white transition-all flex items-center gap-2 uppercase">WhatsApp</a></li>
-                  )}
-                  <li><a href={`mailto:${contactEmail}`} className="hover:text-white transition-all flex items-center gap-2 uppercase text-[8px] break-all">{contactEmail}</a></li>
-               </ul>
-            </div>
-          </div>
-          
-          <div className="max-w-7xl mx-auto pt-16 mt-16 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-8">
-             <div className="flex flex-col gap-2">
-                <div className="text-[10px] font-mono text-neutral-600 uppercase tracking-[0.5em]">AURORA IDENTITY • {new Date().getFullYear()}</div>
-                <div className="text-[8px] font-mono text-neutral-800 uppercase tracking-widest">Digital Sanctuary designed for the void</div>
-             </div>
-             <div className="flex gap-8 text-neutral-500 font-mono text-[8px] uppercase tracking-widest">
-                <button className="hover:text-white transition-colors">Privacy</button>
-                <button className="hover:text-white transition-colors">Terms</button>
-                <button className="hover:text-white transition-colors">Ethics</button>
-             </div>
           </div>
         </footer>
       </motion.div>
