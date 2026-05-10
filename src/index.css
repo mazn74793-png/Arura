@@ -40,6 +40,14 @@
   ::selection {
     @apply bg-white text-black;
   }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
 }
 
 .eye-lid {

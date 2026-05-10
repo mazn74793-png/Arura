@@ -171,20 +171,22 @@ export default function ShopPage() {
 
       <main className="max-w-7xl mx-auto px-4 md:px-6 py-8 md:py-12">
         {/* Category Filters */}
-        <div className="flex flex-wrap gap-2 md:gap-4 mb-16 md:mb-24 justify-center">
-          {categories.map((cat) => (
-            <button
-              key={cat.id}
-              onClick={() => setActiveCategory(cat.id)}
-              className={`px-4 md:px-8 py-3 text-[8px] md:text-[10px] font-mono uppercase tracking-[0.3em] transition-all duration-500 border ${
-                activeCategory === cat.id 
-                  ? 'bg-white text-black border-white' 
-                  : 'bg-transparent text-neutral-500 border-white/5 hover:border-white/20'
-              }`}
-            >
-              {cat.label}
-            </button>
-          ))}
+        <div className="mb-16 md:mb-24 overflow-x-auto no-scrollbar -mx-4 px-4 md:mx-0 md:px-0">
+          <div className="flex flex-nowrap md:flex-wrap gap-2 md:gap-4 md:justify-center min-w-max md:min-w-0 pb-4 md:pb-0">
+            {categories.map((cat) => (
+              <button
+                key={cat.id}
+                onClick={() => setActiveCategory(cat.id)}
+                className={`flex-none px-6 md:px-8 py-3 text-[8px] md:text-[10px] font-mono uppercase tracking-[0.3em] transition-all duration-500 border whitespace-nowrap ${
+                  activeCategory === cat.id 
+                    ? 'bg-white text-black border-white' 
+                    : 'bg-transparent text-neutral-500 border-white/5 hover:border-white/20'
+                }`}
+              >
+                {cat.label}
+              </button>
+            ))}
+          </div>
         </div>
 
         {loading ? (

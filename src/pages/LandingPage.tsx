@@ -7,6 +7,7 @@ import { ChevronDown, ArrowRight, ShoppingBag, User as UserIcon } from 'lucide-r
 import { Product } from '../types';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
+import ProductCard from '../components/ProductCard';
 
 // Global variable to track entry within the same JS session (lost on refresh)
 let hasEnteredThisSession = false;
@@ -253,31 +254,7 @@ export default function LandingPage() {
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-x-4 md:gap-x-8 gap-y-12">
               {featuredProducts.map((product, i) => (
-                <motion.div
-                  key={product.id}
-                  initial={{ opacity: 0, y: 30 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: i * 0.1, duration: 0.8, ease: "easeOut" }}
-                  className="group cursor-pointer space-y-6"
-                  onClick={() => navigate(`/product/${product.id}`)}
-                >
-                  <div className="aspect-[3/4] bg-neutral-900 overflow-hidden relative">
-                    <img 
-                      src={product.images[0]} 
-                      alt={product.name}
-                      className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110 brightness-90 group-hover:brightness-100"
-                      referrerPolicy="no-referrer"
-                    />
-                    <div className="absolute inset-x-0 bottom-0 p-4 translate-y-full group-hover:translate-y-0 transition-transform duration-500 bg-black/40 backdrop-blur-sm">
-                       <p className="text-[10px] font-mono uppercase tracking-widest text-center">Quick View</p>
-                    </div>
-                  </div>
-                  <div className="space-y-2 text-center md:text-left">
-                    <h4 className="text-xs md:text-sm font-display uppercase tracking-wider group-hover:text-neutral-400 transition-colors">{product.name}</h4>
-                    <p className="text-[10px] font-mono text-neutral-500 tracking-[0.2em]">${product.price}</p>
-                  </div>
-                </motion.div>
+                <ProductCard key={product.id} product={product} index={i} />
               ))}
             </div>
 

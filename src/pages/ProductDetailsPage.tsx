@@ -143,20 +143,20 @@ export default function ProductDetailsPage() {
               </AnimatePresence>
               
               {product.images.length > 1 && (
-                <>
+                <div className="absolute inset-0 flex items-center justify-between p-4 pointer-events-none">
                   <button 
                     onClick={() => setActiveImageIndex((prev) => (prev > 0 ? prev - 1 : product.images.length - 1))}
-                    className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-black/50 backdrop-blur-md rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-white hover:text-black"
+                    className="w-12 h-12 bg-black/40 backdrop-blur-md rounded-full flex items-center justify-center text-white/50 hover:text-white hover:bg-black/60 transition-all pointer-events-auto border border-white/5"
                   >
-                    <ChevronLeft className="w-5 h-5" />
+                    <ChevronLeft className="w-6 h-6" />
                   </button>
                   <button 
                     onClick={() => setActiveImageIndex((prev) => (prev < product.images.length - 1 ? prev + 1 : 0))}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-black/50 backdrop-blur-md rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-white hover:text-black"
+                    className="w-12 h-12 bg-black/40 backdrop-blur-md rounded-full flex items-center justify-center text-white/50 hover:text-white hover:bg-black/60 transition-all pointer-events-auto border border-white/5"
                   >
-                    <ChevronRight className="w-5 h-5" />
+                    <ChevronRight className="w-6 h-6" />
                   </button>
-                </>
+                </div>
               )}
             </div>
             
@@ -204,21 +204,26 @@ export default function ProductDetailsPage() {
               <div className="flex justify-between items-start">
                 <p className="text-[10px] font-mono text-neutral-500 uppercase tracking-[0.3em]">{product.category}</p>
                 {product.status && product.status !== 'none' && (
-                  <span className={`px-3 py-1 text-[8px] font-mono uppercase tracking-widest ${
-                    product.status === 'sold' ? 'bg-red-500 text-white' : 
-                    product.status === 'sale' ? 'bg-amber-500 text-black' : 
-                    'bg-blue-500 text-white'
+                  <span className={`px-3 py-1.5 text-[8px] font-mono uppercase tracking-[0.2em] backdrop-blur-md border ${
+                    product.status === 'sold' ? 'bg-red-500/10 border-red-500/40 text-red-500' : 
+                    product.status === 'sale' ? 'bg-amber-400/10 border-amber-400/40 text-amber-400' : 
+                    'bg-white/10 border-white/20 text-white'
                   }`}>
                     {product.status === 'sold' ? 'Sold Out' : product.status === 'sale' ? 'Sale' : 'New Entry'}
                   </span>
                 )}
               </div>
               <h1 className="text-3xl md:text-6xl font-display tracking-tighter leading-tight uppercase">{product.name}</h1>
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-6">
                 {product.originalPrice && product.originalPrice > product.price && (
-                  <span className="text-xl md:text-2xl font-mono text-neutral-600 line-through">${product.originalPrice}</span>
+                  <div className="relative group">
+                    <span className="text-xl md:text-3xl font-mono text-neutral-600 px-2 leading-none block">
+                      ${product.originalPrice}
+                    </span>
+                    <div className="absolute left-0 right-0 top-1/2 h-[2px] bg-red-600/80 -rotate-[15deg] transform origin-center shadow-[0_0_10px_rgba(220,38,38,0.4)]" />
+                  </div>
                 )}
-                <p className="text-xl md:text-2xl font-mono text-white">${product.price}</p>
+                <p className="text-2xl md:text-4xl font-mono text-white leading-none">${product.price}</p>
               </div>
             </motion.header>
 
