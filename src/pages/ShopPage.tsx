@@ -104,7 +104,16 @@ export default function ShopPage() {
           )}
         </div>
 
-        <div className="flex items-center gap-6">
+        <div className="flex items-center gap-4 md:gap-6">
+          {isAdmin && (
+            <button 
+              onClick={() => navigate('/admin')} 
+              className="text-neutral-500 hover:text-white transition-colors text-[10px] md:text-xs font-mono uppercase tracking-widest"
+              title="Admin Control"
+            >
+              Admin
+            </button>
+          )}
           <button 
             onClick={() => navigate(user ? '/profile' : '/auth')}
             className="p-2 text-neutral-500 hover:text-white transition-colors"

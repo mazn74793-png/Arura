@@ -19,6 +19,7 @@ export default function SettingsManagement() {
     whatsapp: ''
   });
   const [contactEmail, setContactEmail] = useState('');
+  const [automationEmail, setAutomationEmail] = useState('');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -34,6 +35,7 @@ export default function SettingsManagement() {
           setLogoUrl(data.logoUrl || '');
           if (data.socialLinks) setSocialLinks({ ...socialLinks, ...data.socialLinks });
           setContactEmail(data.contactEmail || '');
+          setAutomationEmail(data.automationEmail || '');
         }
       } catch (error) {
         console.error(error);
@@ -101,6 +103,7 @@ export default function SettingsManagement() {
         logoUrl: logoUrl,
         socialLinks: socialLinks,
         contactEmail: contactEmail,
+        automationEmail: automationEmail,
         updatedAt: serverTimestamp()
       }, { merge: true });
       alert('Settings updated successfully.');
@@ -266,6 +269,15 @@ export default function SettingsManagement() {
                 onChange={(e) => setContactEmail(e.target.value)}
                 placeholder="CONCIERGE@DOMAIN.COM"
                 className="w-full bg-black border border-white/10 p-4 focus:border-white transition-colors outline-none font-mono text-xs" 
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-[10px] font-mono uppercase tracking-widest text-neutral-500 text-blue-400">Automation Email (for order notifications)</label>
+              <input 
+                value={automationEmail}
+                onChange={(e) => setAutomationEmail(e.target.value)}
+                placeholder="ORDERS@AUTOMATION.SERVICE"
+                className="w-full bg-black border border-blue-500/20 p-4 focus:border-blue-400 transition-colors outline-none font-mono text-xs" 
               />
             </div>
           </div>

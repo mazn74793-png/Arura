@@ -180,7 +180,7 @@ export default function LandingPage() {
             {isAdmin && (
               <button 
                 onClick={() => navigate('/admin')} 
-                className="hidden md:block text-neutral-500 hover:text-white transition-colors"
+                className="text-neutral-500 hover:text-white transition-colors"
                 title="Admin Control"
               >
                 Admin

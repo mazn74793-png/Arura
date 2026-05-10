@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, doc, getDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { motion } from 'motion/react';
 import { ChevronLeft, ShoppingBag, CheckCircle2, Trash2 } from 'lucide-react';
@@ -21,6 +21,22 @@ export default function CheckoutPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [orderId, setOrderId] = useState<string | null>(null);
+  const [automationEmail, setAutomationEmail] = useState('');
+
+  useEffect(() => {
+    async function fetchSettings() {
+      try {
+        const docRef = doc(db, 'settings', 'global');
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          setAutomationEmail(docSnap.data().automationEmail || '');
+        }
+      } catch (error) {
+        console.error("Error fetching settings:", error);
+      }
+    }
+    fetchSettings();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,6 +48,7 @@ export default function CheckoutPage() {
         ...form,
         items: cart,
         total: cartTotal,
+        automationEmail: automationEmail,
         status: 'pending',
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp()
@@ -50,6 +67,7 @@ export default function CheckoutPage() {
         formData.append("Order ID", docRef.id);
         formData.append("Customer", form.customerName);
         formData.append("Email", form.email);
+        formData.append("Automation Email", automationEmail);
         formData.append("Phone", form.phone);
         formData.append("Address", form.address);
         formData.append("Total", `$${cartTotal}`);
