@@ -71,7 +71,7 @@ export default function CheckoutPage() {
         formData.append("Phone", form.phone);
         formData.append("Address", form.address);
         formData.append("Total", `$${cartTotal}`);
-        formData.append("Items", cart.map(item => `${item.name} (${item.size}) x${item.quantity}`).join(', '));
+        formData.append("Items", cart.map(item => `${item.name} (${item.size}) x${item.quantity} [Image: ${item.image || 'N/A'}]`).join('\n'));
 
         fetch("https://api.web3forms.com/submit", {
           method: "POST",

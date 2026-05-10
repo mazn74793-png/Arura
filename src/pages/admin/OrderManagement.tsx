@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
-import { collection, getDocs, doc, updateDoc, serverTimestamp, query, orderBy, onSnapshot, addDoc } from 'firebase/firestore';
+import { collection, getDocs, doc, updateDoc, deleteDoc, serverTimestamp, query, orderBy, onSnapshot, addDoc } from 'firebase/firestore';
 import { motion, AnimatePresence } from 'motion/react';
 import { db } from '../../lib/firebase';
 import { Order, OrderStatus } from '../../types';
-import { ShoppingBag, Clock, CheckCircle2, Truck, XCircle, Bell, ChevronDown, User, MapPin, Phone, Mail } from 'lucide-react';
+import { ShoppingBag, Clock, CheckCircle2, Truck, XCircle, Bell, ChevronDown, User, MapPin, Phone, Mail, Trash2, TrendingUp, DollarSign } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
 export default function OrderManagement() {
@@ -43,6 +43,35 @@ export default function OrderManagement() {
     }
   };
 
+  const deleteOrder = async (orderId: string) => {
+    if (window.confirm('Delete this order permanently from records? This action cannot be reversed.')) {
+      try {
+        await deleteDoc(doc(db, 'orders', orderId));
+        if (selectedOrder?.id === orderId) setSelectedOrder(null);
+        alert('Transmission purged from system.');
+      } catch (error) {
+        console.error(error);
+      }
+    }
+  };
+
+  const calculateMonthlyStats = () => {
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+
+    const monthlyOrders = orders.filter(o => {
+      if (!o.createdAt?.toDate) return false;
+      const d = o.createdAt.toDate();
+      return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+    });
+
+    const revenue = monthlyOrders.reduce((acc, curr) => acc + (Number(curr.total) || 0), 0);
+    return { count: monthlyOrders.length, revenue };
+  };
+
+  const stats = calculateMonthlyStats();
+
   const statusIcons = {
     pending: { icon: Clock, color: 'text-amber-500', bg: 'bg-amber-500/10' },
     confirmed: { icon: CheckCircle2, color: 'text-blue-500', bg: 'bg-blue-500/10' },
@@ -53,10 +82,25 @@ export default function OrderManagement() {
 
   return (
     <div className="space-y-6 md:space-y-12 pb-20 md:pb-0">
-      <header className="bg-neutral-900 border border-white/5 p-6 md:p-8 rounded-2xl">
+      <header className="bg-neutral-900 border border-white/5 p-6 md:p-8 rounded-2xl flex flex-col md:flex-row justify-between gap-6">
         <div className="space-y-1">
           <h2 className="text-xl md:text-2xl font-display uppercase tracking-tight">Order Logs</h2>
           <p className="text-[10px] font-mono text-neutral-500 uppercase tracking-widest">{orders.length} Transmissions Received</p>
+        </div>
+        
+        <div className="grid grid-cols-2 gap-4">
+          <div className="bg-black/20 border border-white/5 p-4 rounded-xl space-y-1">
+            <p className="text-[8px] font-mono text-neutral-500 uppercase tracking-widest flex items-center gap-2">
+              <TrendingUp className="w-3 h-3" /> Monthly Volume
+            </p>
+            <p className="text-lg font-display uppercase">{stats.count} Orders</p>
+          </div>
+          <div className="bg-black/20 border border-white/5 p-4 rounded-xl space-y-1">
+            <p className="text-[8px] font-mono text-neutral-500 uppercase tracking-widest flex items-center gap-2">
+              <DollarSign className="w-3 h-3" /> Monthly Revenue
+            </p>
+            <p className="text-lg font-display uppercase text-green-500">${stats.revenue}</p>
+          </div>
         </div>
       </header>
 
@@ -157,8 +201,11 @@ export default function OrderManagement() {
                   <h4 className="text-[10px] font-mono uppercase tracking-[0.3em] text-white">Manifest</h4>
                   <div className="space-y-4">
                     {selectedOrder.items.map((item, idx) => (
-                      <div key={idx} className="flex justify-between items-center bg-black/40 p-3 rounded-xl border border-white/5">
-                        <div className="space-y-1">
+                      <div key={idx} className="flex gap-4 items-center bg-black/40 p-3 rounded-xl border border-white/5">
+                        <div className="w-12 h-16 bg-neutral-800 rounded overflow-hidden flex-shrink-0">
+                          {item.image && <img src={item.image} alt={item.name} className="w-full h-full object-cover" />}
+                        </div>
+                        <div className="flex-1 space-y-1">
                           <div className="text-xs font-medium uppercase">{item.name}</div>
                           <div className="text-[8px] font-mono text-neutral-500 uppercase tracking-widest">SIZE {item.size} / x{item.quantity}</div>
                         </div>
@@ -172,12 +219,21 @@ export default function OrderManagement() {
                   </div>
                 </div>
 
-                <button 
-                  onClick={() => alert(`Simulated SMS sent to ${selectedOrder.phone}`)}
-                  className="w-full py-4 bg-white/5 border border-white/10 hover:border-white transition-all rounded-xl md:rounded-2xl flex items-center justify-center gap-3 text-[10px] font-mono uppercase tracking-widest"
-                >
-                  < Bell className="w-4 h-4" /> Poke Customer
-                </button>
+                <div className="flex gap-2">
+                  <button 
+                    onClick={() => alert(`Simulated SMS sent to ${selectedOrder.phone}`)}
+                    className="flex-1 py-4 bg-white/5 border border-white/10 hover:border-white transition-all rounded-xl md:rounded-2xl flex items-center justify-center gap-3 text-[10px] font-mono uppercase tracking-widest"
+                  >
+                    < Bell className="w-4 h-4" /> Poke
+                  </button>
+                  <button 
+                    onClick={() => deleteOrder(selectedOrder.id)}
+                    className="p-4 bg-red-500/10 border border-red-500/20 hover:bg-red-500 hover:text-white transition-all rounded-xl md:rounded-2xl text-red-500"
+                    title="Purge Order Record"
+                  >
+                    < Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
               </section>
             </div>
           </motion.aside>
