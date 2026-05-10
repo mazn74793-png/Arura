@@ -48,53 +48,45 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [adminEmails, setAdminEmails] = useState<string[]>([]);
   const unsubWishlistRef = useRef<(() => void) | null>(null);
 
+  // 1. Dedicated Settings Listener
   useEffect(() => {
-    // Listen to global settings for admin list
     const settingsRef = doc(db, 'settings', 'global');
     const unsubSettings = onSnapshot(settingsRef, (snap) => {
       if (snap.exists()) {
-        setAdminEmails(snap.data().adminEmails || []);
+        const emails = snap.data().adminEmails || [];
+        setAdminEmails(emails.map((e: string) => e.trim().toLowerCase()));
       }
+    }, (error) => {
+      console.warn("Settings listener failed:", error);
     });
+    return () => unsubSettings();
+  }, []);
 
-    // Test Connection
-    async function testConnection() {
-      try {
-        await getDocFromServer(doc(db, 'test', 'connection'));
-      } catch (error) {
-        if(error instanceof Error && error.message.includes('the client is offline')) {
-          console.error("Please check your Firebase configuration.");
-        }
-      }
-    }
-    testConnection();
-
+  // 2. Auth State and Profile Sync
+  useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       try {
         setUser(firebaseUser);
         
-        // Clean up previous wishlist subscription
         if (unsubWishlistRef.current) {
           unsubWishlistRef.current();
           unsubWishlistRef.current = null;
         }
 
         if (firebaseUser) {
-          // Sync user profile
           const userRef = doc(db, 'users', firebaseUser.uid);
           let userSnap;
           try {
             userSnap = await getDoc(userRef);
           } catch (error) {
-            handleFirestoreError(error, OperationType.GET, `users/${firebaseUser.uid}`);
             userSnap = null;
           }
-          
-          // Initial admin check based on hardcoded email OR if they are already in the settings list
-          // Note: we might not have settings yet, but as a fallback the hardcoded one works
-          const isSuperAdmin = firebaseUser.email === "motaem23y@gmail.com";
-          const isAdminInList = firebaseUser.email && adminEmails.includes(firebaseUser.email.toLowerCase());
-          const wantsAdmin = isSuperAdmin || isAdminInList;
+
+          // Compute admin status based on current state
+          const email = firebaseUser.email?.toLowerCase();
+          const isSuperAdmin = email === "motaem23y@gmail.com";
+          const isAdminInList = email && adminEmails.includes(email);
+          const needsAdminRole = isSuperAdmin || isAdminInList;
           
           if (userSnap && !userSnap.exists()) {
             const newProfile: UserProfile = {
@@ -102,39 +94,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               email: firebaseUser.email,
               displayName: firebaseUser.displayName,
               photoURL: firebaseUser.photoURL,
-              role: wantsAdmin ? 'admin' : 'user'
+              role: needsAdminRole ? 'admin' : 'user'
             };
-            try {
-              await setDoc(userRef, {
-                ...newProfile,
-                createdAt: serverTimestamp()
-              });
-            } catch (error) {
-              handleFirestoreError(error, OperationType.WRITE, `users/${firebaseUser.uid}`);
-            }
+            await setDoc(userRef, { ...newProfile, createdAt: serverTimestamp() });
             setProfile(newProfile);
           } else if (userSnap) {
             const currentProfile = userSnap.data() as UserProfile;
-            // Auto-upgrade if in admin list but role isn't admin
-            if (wantsAdmin && currentProfile.role !== 'admin') {
-              try {
-                await setDoc(userRef, { role: 'admin' }, { merge: true });
-                setProfile({ ...currentProfile, role: 'admin' });
-              } catch (e) {
-                console.error("Failed to auto-upgrade admin", e);
-                setProfile(currentProfile);
-              }
+            if (needsAdminRole && currentProfile.role !== 'admin') {
+              await setDoc(userRef, { role: 'admin' }, { merge: true });
+              setProfile({ ...currentProfile, role: 'admin' });
             } else {
               setProfile(currentProfile);
             }
           }
 
-          // Listen to wishlist
+          // Wishlist listener
           const wishlistRef = collection(db, 'users', firebaseUser.uid, 'wishlist');
           unsubWishlistRef.current = onSnapshot(wishlistRef, (snap) => {
             setWishlist(snap.docs.map(doc => doc.id));
-          }, (error) => {
-            handleFirestoreError(error, OperationType.GET, `users/${firebaseUser.uid}/wishlist`);
           });
         } else {
           setProfile(null);
@@ -149,44 +126,40 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     return () => {
       unsubscribe();
-      unsubSettings();
       if (unsubWishlistRef.current) unsubWishlistRef.current();
     };
-  }, [adminEmails]);
+  }, [adminEmails]); // Auth re-evaluates when adminEmails changes
 
   const loginWithGoogle = async () => {
     const provider = new GoogleAuthProvider();
-    try {
-      await signInWithPopup(auth, provider);
-    } catch (error) {
-      console.error("Login failed:", error);
-    }
+    await signInWithPopup(auth, provider);
   };
 
   const logout = async () => {
     await signOut(auth);
+    setProfile(null);
+    setUser(null);
   };
 
   const toggleWishlist = async (productId: string) => {
     if (!user) return;
     const itemRef = doc(db, 'users', user.uid, 'wishlist', productId);
-    try {
-      if (wishlist.includes(productId)) {
-        await deleteDoc(itemRef);
-      } else {
-        await setDoc(itemRef, {
-          productId,
-          addedAt: serverTimestamp()
-        });
-      }
-    } catch (error) {
-      handleFirestoreError(error, OperationType.WRITE, `users/${user.uid}/wishlist/${productId}`);
+    if (wishlist.includes(productId)) {
+      await deleteDoc(itemRef);
+    } else {
+      await setDoc(itemRef, { productId, addedAt: serverTimestamp() });
     }
   };
 
-  const isAdmin = profile?.role === 'admin' && (
-    (user?.email === "motaem23y@gmail.com") || 
-    (user?.email && adminEmails.includes(user.email.toLowerCase()))
+  // isAdmin is true if:
+  // 1. Role in profile is admin
+  // 2. OR Email is super admin
+  // 3. OR Email is in staff list
+  const activeEmail = user?.email?.toLowerCase();
+  const isAdmin = !!user && (
+    (profile?.role === 'admin') ||
+    (activeEmail === "motaem23y@gmail.com") ||
+    (!!activeEmail && adminEmails.includes(activeEmail))
   );
 
   return (

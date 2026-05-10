@@ -12,11 +12,14 @@ service cloud.firestore {
     }
 
     function isAdmin() {
-      return isSignedIn() && 
-        (request.auth.token.email == "motaem23y@gmail.com" ||
-         (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
-          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin') ||
-         exists(/databases/$(database)/documents/admins/$(request.auth.uid)));
+      return isSignedIn() && (
+        request.auth.token.email == "motaem23y@gmail.com" ||
+        (exists(/databases/$(database)/documents/settings/global) && 
+         request.auth.token.email in get(/databases/$(database)/documents/settings/global).data.adminEmails) ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin') ||
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
     }
 
     function incoming() {
