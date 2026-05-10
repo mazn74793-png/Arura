@@ -108,18 +108,19 @@ export default function AdminDashboard() {
       {/* Main Content */}
       <main className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden bg-black relative">
         <header className="flex-shrink-0 h-16 md:h-20 bg-black border-b border-white/5 px-4 md:px-8 flex items-center justify-between z-40 relative">
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 md:gap-4">
             <button 
               onClick={(e) => {
                 e.preventDefault();
                 setIsSidebarOpen(true);
               }} 
-              className="lg:hidden p-3 -ml-3 rounded-xl hover:bg-white/5 transition-colors relative z-[70] cursor-pointer"
+              className="lg:hidden p-3 -ml-3 rounded-xl hover:bg-white/10 transition-colors relative z-[70] flex items-center gap-2 group"
               aria-label="Open Menu"
             >
-              <Menu className="w-5 h-5 md:w-6 h-6 text-white" />
+              <Menu className="w-5 h-5 text-white group-hover:scale-110 transition-transform" />
+              <span className="text-[10px] font-mono uppercase tracking-widest text-neutral-400">Panel</span>
             </button>
-            <div className="text-[10px] md:text-xs font-mono text-neutral-500 uppercase tracking-[0.3em] overflow-hidden truncate max-w-[150px] sm:max-w-none">
+            <div className="text-[10px] md:text-xs font-mono text-neutral-500 uppercase tracking-[0.3em] overflow-hidden truncate max-w-[100px] sm:max-w-none">
               Dashboard / {navItems.find(i => location.pathname === i.path)?.label || 'Overview'}
             </div>
           </div>

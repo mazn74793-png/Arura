@@ -180,10 +180,11 @@ export default function LandingPage() {
             {isAdmin && (
               <button 
                 onClick={() => navigate('/admin')} 
-                className="text-neutral-500 hover:text-white transition-colors"
+                className="flex items-center gap-2 text-neutral-400 hover:text-white transition-colors"
                 title="Admin Control"
               >
-                Admin
+                <div className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse" />
+                <span className="text-[10px] font-mono uppercase tracking-[0.2em]">Admin</span>
               </button>
             )}
             <button 

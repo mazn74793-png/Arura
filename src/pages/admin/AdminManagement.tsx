@@ -72,12 +72,14 @@ export default function AdminManagement() {
           handleFirestoreError(error, OperationType.UPDATE, `users/${userDoc.id}`);
         }
         setMessage({ text: `Access granted to ${emailInput}`, type: 'success' });
+        alert(`Clearance granted to ${emailInput}`);
         setEmailInput('');
         fetchAdmins();
       }
     } catch (error) {
       console.error(error);
       setMessage({ text: "Failed to update permissions.", type: 'error' });
+      alert("Failed to grant access.");
     } finally {
       setSearching(false);
     }
@@ -91,10 +93,11 @@ export default function AdminManagement() {
           role: 'user',
           updatedAt: serverTimestamp()
         });
+        alert('Privileges revoked.');
         fetchAdmins();
       } catch (error) {
         console.error(error);
-        alert("Operation failed.");
+        alert("Operation failed. Unauthorized.");
       }
     }
   };

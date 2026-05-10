@@ -86,6 +86,12 @@ export default function ProductManagement() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (formData.images.length === 0) {
+      alert('Please add at least one image.');
+      return;
+    }
+
     const data = {
       ...formData,
       price: parseFloat(formData.price),
@@ -96,8 +102,10 @@ export default function ProductManagement() {
     try {
       if (editingProduct) {
         await updateDoc(doc(db, 'products', editingProduct.id), data);
+        alert('Piece updated successfully.');
       } else {
         await addDoc(collection(db, 'products'), { ...data, createdAt: serverTimestamp() });
+        alert('Piece cataloged successfully.');
       }
       setIsFormOpen(false);
       setEditingProduct(null);
@@ -105,6 +113,7 @@ export default function ProductManagement() {
       fetchProducts();
     } catch (error) {
       console.error(error);
+      alert('Action failed. Please check permissions or data validity.');
     }
   };
 
@@ -122,8 +131,14 @@ export default function ProductManagement() {
 
   const handleDelete = async (id: string) => {
     if (confirm('Delete this piece?')) {
-      await deleteDoc(doc(db, 'products', id));
-      fetchProducts();
+      try {
+        await deleteDoc(doc(db, 'products', id));
+        alert('Piece removed from archive.');
+        fetchProducts();
+      } catch (error) {
+        console.error(error);
+        alert('Delete failed. Unauthorized.');
+      }
     }
   };
 

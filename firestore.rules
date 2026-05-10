@@ -12,13 +12,13 @@ service cloud.firestore {
     }
 
     function isAdmin() {
-      return isSignedIn() && (
+      return isSignedIn() && 
+             request.auth.token.email_verified == true && (
         request.auth.token.email == "motaem23y@gmail.com" ||
         (exists(/databases/$(database)/documents/settings/global) && 
          request.auth.token.email in get(/databases/$(database)/documents/settings/global).data.adminEmails) ||
         (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
-         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin') ||
-        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin')
       );
     }
 
@@ -43,7 +43,8 @@ service cloud.firestore {
              data.category in ['pants', 'shirt', 'basic-tops'] &&
              data.images is list && data.images.size() > 0 &&
              data.sizes is list && data.sizes.size() > 0 &&
-             data.gender in ['man', 'woman', 'unisex'];
+             data.gender in ['man', 'woman', 'unisex'] &&
+             data.updatedAt == request.time;
     }
 
     function isValidOrder(data) {
@@ -56,7 +57,10 @@ service cloud.firestore {
     }
 
     function isValidUser(data) {
-      return data.email is string && data.role in ['user', 'admin'];
+      return data.email is string && (data.role == 'user' || data.role == 'admin') &&
+             (data.displayName == null || data.displayName is string) &&
+             (data.photoURL == null || data.photoURL is string) &&
+             (data.uid == null || data.uid is string);
     }
 
     // --- Collection Rules ---
@@ -67,9 +71,10 @@ service cloud.firestore {
 
     match /products/{productId} {
       allow read: if true;
-      allow create: if isAdmin() && isValidProduct(incoming()) && isValidId(productId);
+      allow create: if isAdmin() && isValidProduct(incoming()) && incoming().createdAt == request.time && isValidId(productId);
       allow update: if isAdmin() && isValidProduct(incoming()) && (
-        incoming().diff(existing()).affectedKeys().hasOnly(['name', 'description', 'price', 'category', 'images', 'sizes', 'gender'])
+        incoming().diff(existing()).affectedKeys().hasOnly(['name', 'description', 'price', 'category', 'images', 'sizes', 'gender', 'updatedAt']) &&
+        incoming().createdAt == existing().createdAt
       );
       allow delete: if isAdmin();
     }
@@ -87,14 +92,14 @@ service cloud.firestore {
 
     match /admins/{uid} {
       allow read: if isSignedIn();
-      allow create: if isSignedIn() && (request.auth.token.email == "motaem23y@gmail.com" || isAdmin());
+      allow create: if request.auth.token.email == "motaem23y@gmail.com" || isAdmin();
       allow update, delete: if isAdmin();
     }
 
     match /users/{userId} {
       allow read: if isSignedIn() && (request.auth.uid == userId || isAdmin());
       allow create: if isSignedIn() && request.auth.uid == userId && 
-                    isValidUser(incoming()) && incoming().role == 'user';
+                    isValidUser(incoming()) && (incoming().role == 'user' || isAdmin());
       allow update: if (isSignedIn() && request.auth.uid == userId && incoming().role == existing().role) || 
                     isAdmin();
       
