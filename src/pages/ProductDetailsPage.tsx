@@ -19,6 +19,7 @@ export default function ProductDetailsPage() {
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedSize, setSelectedSize] = useState<string>('');
+  const [selectedColor, setSelectedColor] = useState<string>('');
   const [selectedGender, setSelectedGender] = useState<Gender>('man');
   const [quantity, setQuantity] = useState(1);
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
@@ -50,6 +51,9 @@ export default function ProductDetailsPage() {
           const data = docSnap.data() as Product;
           setProduct({ ...data, id: docSnap.id });
           setSelectedSize(data.sizes[0] || '');
+          if (data.colors && data.colors.length > 0) {
+            setSelectedColor(data.colors[0].name);
+          }
           setSelectedGender(data.gender !== 'unisex' ? data.gender : 'man');
         }
       } catch (error) {
@@ -73,9 +77,10 @@ export default function ProductDetailsPage() {
       name: product.name,
       price: product.price,
       size: selectedSize,
+      color: selectedColor,
       quantity,
       gender: selectedGender,
-      image: product.images[0]
+      image: product.colors?.find(c => c.name === selectedColor)?.image || product.images[0]
     });
   };
 
@@ -122,12 +127,15 @@ export default function ProductDetailsPage() {
             <div className="relative group aspect-[3/4] bg-neutral-900 border border-white/5 overflow-hidden">
               <AnimatePresence mode="wait">
                 <motion.img 
-                  key={activeImageIndex}
+                  key={activeImageIndex + (selectedColor || '')}
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
                   transition={{ duration: 0.5 }}
-                  src={product.images[activeImageIndex]} 
+                  src={
+                    (selectedColor && activeImageIndex === 0 && product.colors?.find(c => c.name === selectedColor)?.image) || 
+                    product.images[activeImageIndex]
+                  } 
                   alt={product.name}
                   className="w-full h-full object-cover"
                   referrerPolicy="no-referrer"
@@ -242,6 +250,43 @@ export default function ProductDetailsPage() {
                   ))}
                 </div>
               </div>
+
+              {product.colors && product.colors.length > 0 && (
+                <div className="space-y-3 md:space-y-4">
+                  <label className="text-[10px] font-mono uppercase tracking-widest text-neutral-500">Select Color</label>
+                  <div className="flex flex-wrap gap-4">
+                    {product.colors.map((color) => (
+                      <button
+                        key={color.name}
+                        onClick={() => {
+                          setSelectedColor(color.name);
+                          setActiveImageIndex(0); // Show color image (handled in gallery logic)
+                        }}
+                        className="group flex flex-col items-center gap-2"
+                        title={color.name}
+                      >
+                        <div 
+                          className={cn(
+                            "w-10 h-10 rounded-full border-2 transition-all p-0.5",
+                            selectedColor === color.name ? "border-white scale-110" : "border-white/10 hover:border-white/40"
+                          )}
+                        >
+                          <div 
+                            className="w-full h-full rounded-full" 
+                            style={{ backgroundColor: color.hex }}
+                          />
+                        </div>
+                        <span className={cn(
+                          "text-[8px] font-mono uppercase tracking-widest transition-colors",
+                          selectedColor === color.name ? "text-white" : "text-neutral-500"
+                        )}>
+                          {color.name}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               <div className="space-y-3 md:space-y-4">
                 <label className="text-[10px] font-mono uppercase tracking-widest text-neutral-500">Quantity</label>

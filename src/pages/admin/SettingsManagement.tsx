@@ -1,13 +1,8 @@
 import { useState, useEffect } from 'react';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
-import { Save, Video, Upload, CheckCircle2 } from 'lucide-react';
-
-declare global {
-  interface Window {
-    cloudinary: any;
-  }
-}
+import { Save, Video, Upload, CheckCircle2, Loader2 } from 'lucide-react';
+import { uploadToCloudinary } from '../../lib/cloudinary';
 
 export default function SettingsManagement() {
   const [videoUrl, setVideoUrl] = useState('');
@@ -46,53 +41,22 @@ export default function SettingsManagement() {
     fetchSettings();
   }, []);
 
-  const handleCloudinaryUpload = (target: 'video' | 'logo') => {
-    const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
-    const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
-
-    if (!cloudName || !uploadPreset) {
-      alert("Cloudinary configuration missing.");
-      return;
-    }
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, target: 'video' | 'logo') => {
+    const file = e.target.files?.[0];
+    if (!file) return;
 
     setUploading(true);
-    const myWidget = window.cloudinary.createUploadWidget(
-      {
-        cloudName: cloudName,
-        uploadPreset: uploadPreset,
-        resourceType: target === 'video' ? 'video' : 'image',
-        multiple: false,
-        maxFiles: 1,
-        styles: {
-          palette: {
-            window: "#000000",
-            sourceBg: "#000000",
-            windowBorder: "#ffffff33",
-            tabIcon: "#FFFFFF",
-            inactiveTabIcon: "#8E9FBB",
-            menuIcons: "#2AD9FF",
-            link: "#FFFFFF",
-            action: "#FFFFFF",
-            inProgress: "#FFFFFF",
-            complete: "#FFFFFF",
-            error: "#EA2727",
-            textDark: "#000000",
-            textLight: "#FFFFFF"
-          }
-        }
-      },
-      (error: any, result: any) => {
-        if (!error && result && result.event === "success") {
-          if (target === 'video') setVideoUrl(result.info.secure_url);
-          else setLogoUrl(result.info.secure_url);
-          setUploading(false);
-        } else if (error) {
-          console.error(error);
-          setUploading(false);
-        }
-      }
-    );
-    myWidget.open();
+    try {
+      const url = await uploadToCloudinary(file, target === 'video' ? 'video' : 'image');
+      if (target === 'video') setVideoUrl(url);
+      else setLogoUrl(url);
+    } catch (error) {
+      console.error(error);
+      alert('Upload failed. Please try again.');
+    } finally {
+      setUploading(false);
+      e.target.value = ''; // Reset input
+    }
   };
 
   const handleSave = async () => {
@@ -141,12 +105,22 @@ export default function SettingsManagement() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
             <div className="p-6 bg-black border border-white/5 rounded-2xl flex flex-col items-center justify-center text-center space-y-4">
-               <button 
-                onClick={() => handleCloudinaryUpload('logo')}
-                className="w-full md:w-auto px-8 py-3 bg-neutral-800 hover:bg-neutral-700 text-white font-mono text-[10px] uppercase tracking-widest transition-all"
-               >
-                 Upload Logo
-               </button>
+               <div className="relative w-full md:w-auto">
+                 <input 
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => handleFileUpload(e, 'logo')}
+                  className="absolute inset-0 opacity-0 cursor-pointer z-10"
+                  disabled={uploading}
+                 />
+                 <button 
+                  disabled={uploading}
+                  className="w-full md:w-auto px-8 py-3 bg-neutral-800 hover:bg-neutral-700 text-white font-mono text-[10px] uppercase tracking-widest transition-all flex items-center justify-center gap-3"
+                 >
+                   {uploading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Upload className="w-3 h-3" />}
+                   {uploading ? 'Uploading...' : 'Browse Logo'}
+                 </button>
+               </div>
             </div>
             <div className="space-y-2">
               <label className="text-[10px] font-mono uppercase tracking-widest text-neutral-500">Logo Image URL</label>
@@ -182,12 +156,22 @@ export default function SettingsManagement() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
             <div className="space-y-4">
               <div className="p-6 bg-black border border-white/5 rounded-2xl flex flex-col items-center justify-center text-center space-y-4">
-                 <button 
-                  onClick={() => handleCloudinaryUpload('video')}
-                  className="w-full md:w-auto px-8 py-3 bg-neutral-800 hover:bg-neutral-700 text-white font-mono text-[10px] uppercase tracking-widest transition-all"
-                 >
-                   Upload Video
-                 </button>
+                 <div className="relative w-full md:w-auto">
+                   <input 
+                    type="file"
+                    accept="video/*"
+                    onChange={(e) => handleFileUpload(e, 'video')}
+                    className="absolute inset-0 opacity-0 cursor-pointer z-10"
+                    disabled={uploading}
+                   />
+                   <button 
+                    disabled={uploading}
+                    className="w-full md:w-auto px-8 py-3 bg-neutral-800 hover:bg-neutral-700 text-white font-mono text-[10px] uppercase tracking-widest transition-all flex items-center justify-center gap-3"
+                   >
+                     {uploading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Video className="w-3 h-3" />}
+                     {uploading ? 'Processing...' : 'Browse Video'}
+                   </button>
+                 </div>
               </div>
             </div>
 

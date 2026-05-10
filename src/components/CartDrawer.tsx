@@ -69,7 +69,7 @@ export default function CartDrawer() {
                       <div className="flex justify-between items-start">
                         <div className="space-y-1">
                           <h3 className="text-xs font-display uppercase tracking-wider">{item.name}</h3>
-                          <p className="text-[10px] font-mono text-neutral-500 uppercase tracking-widest">{item.size} / {item.gender}</p>
+                          <p className="text-[10px] font-mono text-neutral-500 uppercase tracking-widest">{item.size} / {item.gender} {item.color && `/ ${item.color}`}</p>
                         </div>
                         <button 
                           onClick={() => removeFromCart(index)}

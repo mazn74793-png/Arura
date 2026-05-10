@@ -10,6 +10,11 @@ export interface Product {
   category: Category;
   images: string[];
   sizes: string[];
+  colors?: {
+    name: string;
+    hex: string;
+    image: string;
+  }[];
   gender: Gender;
   createdAt: any;
 }
@@ -19,6 +24,7 @@ export interface OrderItem {
   name: string;
   price: number;
   size: string;
+  color?: string;
   quantity: number;
   image?: string;
 }

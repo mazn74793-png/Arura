@@ -2,14 +2,16 @@ import { useState, useEffect } from 'react';
 import { collection, addDoc, getDocs, deleteDoc, doc, updateDoc, serverTimestamp, query, orderBy } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { Product, Category, Gender } from '../../types';
-import { Plus, Trash2, Edit2, X, Image as ImageIcon, Save } from 'lucide-react';
+import { Plus, Trash2, Edit2, X, Image as ImageIcon, Save, Loader2 } from 'lucide-react';
 import { cn } from '../../lib/utils';
+import { uploadToCloudinary } from '../../lib/cloudinary';
 
 export default function ProductManagement() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [uploading, setUploading] = useState(false);
   
   const [formData, setFormData] = useState({
     name: '',
@@ -18,53 +20,36 @@ export default function ProductManagement() {
     category: 'shirt' as Category,
     gender: 'unisex' as Gender,
     images: [] as string[],
-    sizes: ['S', 'M', 'L', 'XL']
+    sizes: ['S', 'M', 'L', 'XL'],
+    colors: [] as { name: string; hex: string; image: string }[]
   });
 
-  const handleCloudinaryUpload = () => {
-    const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
-    const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, targetColorIndex?: number) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
 
-    if (!cloudName || !uploadPreset) {
-      alert("Cloudinary configuration missing.");
-      return;
-    }
-
-    const myWidget = window.cloudinary.createUploadWidget(
-      {
-        cloudName: cloudName,
-        uploadPreset: uploadPreset,
-        resourceType: 'image',
-        multiple: true,
-        maxFiles: 5,
-        styles: {
-          palette: {
-            window: "#000000",
-            sourceBg: "#000000",
-            windowBorder: "#ffffff33",
-            tabIcon: "#FFFFFF",
-            inactiveTabIcon: "#8E9FBB",
-            menuIcons: "#2AD9FF",
-            link: "#FFFFFF",
-            action: "#FFFFFF",
-            inProgress: "#FFFFFF",
-            complete: "#FFFFFF",
-            error: "#EA2727",
-            textDark: "#000000",
-            textLight: "#FFFFFF"
-          }
-        }
-      },
-      (error: any, result: any) => {
-        if (!error && result && result.event === "success") {
-          setFormData(prev => ({
-            ...prev,
-            images: [...prev.images, result.info.secure_url]
-          }));
-        }
+    setUploading(true);
+    try {
+      const uploadPromises = Array.from(files).map(file => uploadToCloudinary(file));
+      const urls = await Promise.all(uploadPromises);
+      
+      if (typeof targetColorIndex === 'number') {
+        const newColors = [...formData.colors];
+        newColors[targetColorIndex].image = urls[0];
+        setFormData(prev => ({ ...prev, colors: newColors }));
+      } else {
+        setFormData(prev => ({
+          ...prev,
+          images: [...prev.images, ...urls].slice(0, 5)
+        }));
       }
-    );
-    myWidget.open();
+    } catch (error) {
+      console.error(error);
+      alert('Upload failed. Please try again.');
+    } finally {
+      setUploading(false);
+      if (e.target) e.target.value = ''; // Reset input
+    }
   };
 
   useEffect(() => {
@@ -125,7 +110,8 @@ export default function ProductManagement() {
       category: 'shirt',
       gender: 'unisex',
       images: [],
-      sizes: ['S', 'M', 'L', 'XL']
+      sizes: ['S', 'M', 'L', 'XL'],
+      colors: []
     });
   };
 
@@ -151,7 +137,8 @@ export default function ProductManagement() {
       category: product.category,
       gender: product.gender,
       images: product.images,
-      sizes: product.sizes
+      sizes: product.sizes,
+      colors: product.colors || []
     });
     setIsFormOpen(true);
   };
@@ -266,14 +253,29 @@ export default function ProductManagement() {
                         </div>
                       ))}
                       {formData.images.length < 5 && (
-                        <button 
-                          type="button"
-                          onClick={handleCloudinaryUpload}
-                          className="aspect-square border border-dashed border-white/10 hover:border-white/40 transition-colors rounded-lg flex flex-col items-center justify-center gap-2 text-neutral-500 hover:text-white"
-                        >
-                          <ImageIcon className="w-6 h-6" />
-                          <span className="text-[8px] font-mono uppercase tracking-widest">Upload</span>
-                        </button>
+                        <div className="relative aspect-square">
+                          <input 
+                            type="file"
+                            multiple
+                            accept="image/*"
+                            onChange={handleFileUpload}
+                            className="absolute inset-0 opacity-0 cursor-pointer z-10"
+                            disabled={uploading}
+                          />
+                          <div className={cn(
+                            "w-full h-full border border-dashed border-white/10 hover:border-white/40 transition-colors rounded-lg flex flex-col items-center justify-center gap-2 text-neutral-500 hover:text-white",
+                            uploading && "animate-pulse"
+                          )}>
+                            {uploading ? (
+                              <Loader2 className="w-6 h-6 animate-spin" />
+                            ) : (
+                              <ImageIcon className="w-6 h-6" />
+                            )}
+                            <span className="text-[8px] font-mono uppercase tracking-widest">
+                              {uploading ? 'Processing' : 'Browse'}
+                            </span>
+                          </div>
+                        </div>
                       )}
                     </div>
 
@@ -322,6 +324,88 @@ export default function ProductManagement() {
                         >
                           {size}
                         </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Colors Section */}
+                  <div className="space-y-4 pt-4 border-t border-white/5">
+                    <div className="flex justify-between items-center">
+                      <label className="text-[10px] font-mono uppercase tracking-widest text-neutral-500">Variants (Colors)</label>
+                      <button 
+                        type="button"
+                        onClick={() => setFormData({...formData, colors: [...formData.colors, { name: '', hex: '#000000', image: '' }]})}
+                        className="text-[8px] font-mono uppercase tracking-widest bg-white/5 px-3 py-1 hover:bg-white/10 transition-colors"
+                      >
+                        + Add Variant
+                      </button>
+                    </div>
+                    
+                    <div className="space-y-4">
+                      {formData.colors.map((color, idx) => (
+                        <div key={idx} className="bg-white/5 p-4 rounded-xl border border-white/5 space-y-4">
+                          <div className="flex gap-4">
+                            <div className="flex-1 space-y-2">
+                              <label className="text-[8px] font-mono uppercase text-neutral-500">Color Name</label>
+                              <input 
+                                value={color.name}
+                                onChange={e => {
+                                  const newColors = [...formData.colors];
+                                  newColors[idx].name = e.target.value;
+                                  setFormData({...formData, colors: newColors});
+                                }}
+                                className="w-full bg-black/40 border border-white/5 p-2 text-[10px] font-mono outline-none"
+                                placeholder="Black, Crimson, etc"
+                              />
+                            </div>
+                            <div className="w-20 space-y-2">
+                              <label className="text-[8px] font-mono uppercase text-neutral-500">HEX</label>
+                              <input 
+                                type="color"
+                                value={color.hex}
+                                onChange={e => {
+                                  const newColors = [...formData.colors];
+                                  newColors[idx].hex = e.target.value;
+                                  setFormData({...formData, colors: newColors});
+                                }}
+                                className="w-full h-9 bg-black/40 border border-white/5 p-1 outline-none cursor-pointer"
+                              />
+                            </div>
+                            <button 
+                              type="button"
+                              onClick={() => {
+                                const newColors = formData.colors.filter((_, i) => i !== idx);
+                                setFormData({...formData, colors: newColors});
+                              }}
+                              className="self-end p-2 text-red-400 hover:text-red-500"
+                            >
+                              <X className="w-4 h-4" />
+                            </button>
+                          </div>
+                          
+                          <div className="flex gap-4 items-center">
+                            <div className="w-16 h-16 bg-black border border-white/5 rounded-lg overflow-hidden flex-shrink-0">
+                               {color.image ? (
+                                 <img src={color.image} alt="" className="w-full h-full object-cover" />
+                               ) : (
+                                 <div className="w-full h-full flex items-center justify-center text-neutral-700">
+                                   <ImageIcon className="w-4 h-4" />
+                                 </div>
+                               )}
+                            </div>
+                            <div className="flex-1 relative">
+                              <input 
+                                type="file"
+                                onChange={(e) => handleFileUpload(e, idx)}
+                                className="absolute inset-0 opacity-0 cursor-pointer z-10"
+                                disabled={uploading}
+                              />
+                              <div className="w-full py-2 border border-dashed border-white/10 text-[8px] font-mono uppercase tracking-widest text-center hover:border-white/40 transition-colors">
+                                {uploading ? 'Uploading...' : 'Upload Color Image'}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
                       ))}
                     </div>
                   </div>

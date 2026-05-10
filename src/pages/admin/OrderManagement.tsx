@@ -207,7 +207,9 @@ export default function OrderManagement() {
                         </div>
                         <div className="flex-1 space-y-1">
                           <div className="text-xs font-medium uppercase">{item.name}</div>
-                          <div className="text-[8px] font-mono text-neutral-500 uppercase tracking-widest">SIZE {item.size} / x{item.quantity}</div>
+                          <div className="text-[8px] font-mono text-neutral-500 uppercase tracking-widest">
+                            SIZE {item.size} {item.color && `/ ${item.color}`} / x{item.quantity}
+                          </div>
                         </div>
                         <div className="text-xs font-mono">${item.price * item.quantity}</div>
                       </div>

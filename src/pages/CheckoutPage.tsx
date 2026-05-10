@@ -74,7 +74,7 @@ export default function CheckoutPage() {
         formData.append("Phone", form.phone);
         formData.append("Address", form.address);
         formData.append("Total", `$${cartTotal}`);
-        formData.append("Items", cart.map(item => `${item.name} (${item.size}) x${item.quantity} [Image: ${item.image || 'N/A'}]`).join('\n'));
+        formData.append("Items", cart.map(item => `${item.name} (${item.size}${item.color ? ` / ${item.color}` : ''}) x${item.quantity} [Image: ${item.image || 'N/A'}]`).join('\n'));
 
         fetch("https://api.web3forms.com/submit", {
           method: "POST",
@@ -238,7 +238,9 @@ export default function CheckoutPage() {
                     </div>
                     <div className="flex-1 space-y-1">
                       <h4 className="text-xs uppercase font-medium">{item.name}</h4>
-                      <p className="text-[10px] font-mono text-neutral-500 uppercase tracking-widest">{item.gender} / Size {item.size}</p>
+                      <p className="text-[10px] font-mono text-neutral-500 uppercase tracking-widest">
+                        {item.gender} / Size {item.size} {item.color && `/ ${item.color}`}
+                      </p>
                       <button 
                         onClick={() => removeFromCart(i)}
                         className="text-[10px] font-mono text-neutral-600 hover:text-white transition-colors uppercase tracking-widest pt-2 flex items-center gap-1"
