@@ -102,7 +102,7 @@ export default function ProductDetailsPage() {
         </button>
         <div className="cursor-pointer" onClick={() => navigate('/')}>
           {logoUrl ? (
-            <img src={logoUrl} alt="Logo" className="h-6 md:h-8 w-auto grayscale brightness-200" />
+            <img src={logoUrl} alt="Logo" className="h-6 md:h-8 w-auto brightness-200" />
           ) : (
             <div className="text-xl md:text-2xl font-display tracking-tighter uppercase">AURORA</div>
           )}

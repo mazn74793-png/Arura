@@ -59,7 +59,7 @@ export default function CheckoutPage() {
       
       // Send easy email notification via Web3Forms
       const web3Key = import.meta.env.VITE_WEB3FORMS_KEY;
-      if (web3Key) {
+      if (web3Key && web3Key !== 'YOUR_ACCESS_KEY_HERE') {
         const formData = new FormData();
         formData.append("access_key", web3Key);
         formData.append("subject", `New Order from ${form.customerName} - $${cartTotal}`);
@@ -237,7 +237,7 @@ export default function CheckoutPage() {
                 cart.map((item, i) => (
                   <div key={i} className="flex gap-6 items-center group">
                     <div className="w-20 aspect-[3/4] bg-neutral-900 border border-white/5 flex-shrink-0 overflow-hidden">
-                      {item.image && <img src={item.image} alt={item.name} className="w-full h-full object-cover grayscale brightness-75 group-hover:grayscale-0 transition-all duration-700" />}
+                      {item.image && <img src={item.image} alt={item.name} className="w-full h-full object-cover brightness-75 group-hover:brightness-100 transition-all duration-700" />}
                     </div>
                     <div className="flex-1 space-y-1">
                       <h4 className="text-xs uppercase font-medium">{item.name}</h4>

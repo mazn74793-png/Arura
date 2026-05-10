@@ -62,7 +62,7 @@ export default function CartDrawer() {
                   <div key={`${item.productId}-${item.size}`} className="flex gap-4 group">
                     <div className="w-24 aspect-[3/4] bg-neutral-900 overflow-hidden relative border border-white/5">
                       {item.image && (
-                         <img src={item.image} alt={item.name} className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500" />
+                         <img src={item.image} alt={item.name} className="w-full h-full object-cover group-hover:scale-105 transition-all duration-500" />
                       )}
                     </div>
                     <div className="flex-1 space-y-3">

@@ -94,7 +94,7 @@ export default function ProfilePage() {
         <section className="flex flex-col md:flex-row items-center md:items-start gap-8 border-b border-white/5 pb-16">
           <div className="w-24 h-24 md:w-32 md:h-32 bg-neutral-900 overflow-hidden border border-white/10 group">
             {profile.photoURL ? (
-              <img src={profile.photoURL} alt="Profile" className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700" />
+              <img src={profile.photoURL} alt="Profile" className="w-full h-full object-cover group-hover:scale-105 transition-all duration-700" />
             ) : (
               <div className="w-full h-full flex items-center justify-center">
                 <User className="w-12 h-12 text-neutral-700" />
@@ -193,7 +193,7 @@ export default function ProfilePage() {
                             <img 
                               src={product.images[0]} 
                               alt={product.name} 
-                              className="w-full h-full object-cover grayscale brightness-75 group-hover:grayscale-0 group-hover:scale-105 transition-all duration-1000"
+                              className="w-full h-full object-cover brightness-75 group-hover:scale-105 transition-all duration-1000"
                               onClick={() => navigate(`/product/${product.id}`)}
                             />
                             <button 

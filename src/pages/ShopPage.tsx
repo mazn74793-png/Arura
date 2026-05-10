@@ -98,7 +98,7 @@ export default function ShopPage() {
 
         <div className="cursor-pointer" onClick={() => navigate('/')}>
           {logoUrl ? (
-            <img src={logoUrl} alt="Logo" className="h-6 md:h-8 w-auto grayscale brightness-200" />
+            <img src={logoUrl} alt="Logo" className="h-6 md:h-8 w-auto brightness-200" />
           ) : (
             <div className="text-xl md:text-2xl font-display tracking-tighter uppercase">AURORA</div>
           )}
@@ -211,7 +211,7 @@ export default function ShopPage() {
       <footer className="py-24 border-t border-white/5 flex flex-col items-center gap-6">
         <div className="flex flex-col items-center gap-2">
             {logoUrl ? (
-              <img src={logoUrl} alt="Logo" className="h-8 md:h-12 w-auto grayscale opacity-40 hover:opacity-100 transition-opacity" />
+              <img src={logoUrl} alt="Logo" className="h-8 md:h-12 w-auto opacity-40 hover:opacity-100 transition-opacity" />
             ) : (
               <div className="text-xl md:text-2xl font-display tracking-tighter uppercase opacity-40">AURORA</div>
             )}

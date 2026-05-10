@@ -170,7 +170,7 @@ export default function LandingPage() {
         <nav className="p-4 md:p-8 flex justify-between items-center border-b border-white/5 sticky top-0 bg-black/80 backdrop-blur-md z-40">
           <div className="cursor-pointer" onClick={() => navigate('/')}>
             {logoUrl ? (
-              <img src={logoUrl} alt="Logo" className="h-6 md:h-8 w-auto grayscale brightness-200" />
+              <img src={logoUrl} alt="Logo" className="h-6 md:h-8 w-auto brightness-200" />
             ) : (
               <div className="text-xl md:text-2xl font-display tracking-tighter">AURORA</div>
             )}
@@ -300,7 +300,7 @@ export default function LandingPage() {
                     <img 
                       src={cat.img} 
                       alt={cat.name}
-                      className="absolute inset-0 w-full h-full object-cover opacity-40 group-hover:opacity-60 transition-opacity duration-700 brightness-50 grayscale hover:grayscale-0"
+                      className="absolute inset-0 w-full h-full object-cover opacity-40 group-hover:opacity-60 transition-opacity duration-700 brightness-50"
                       referrerPolicy="no-referrer"
                     />
                     <div className="relative z-10 space-y-2 text-left">
@@ -342,7 +342,7 @@ export default function LandingPage() {
             <div className="grid grid-cols-1 md:grid-cols-4 gap-16 md:gap-24 mb-32">
               <div className="col-span-1 md:col-span-2 space-y-12">
                 <div className="text-4xl font-display tracking-tighter uppercase cursor-pointer flex items-center gap-3" onClick={() => navigate('/')}>
-                  {logoUrl ? <img src={logoUrl} alt="Aurora" className="h-10 grayscale brightness-200" /> : 'AURORA'}
+                  {logoUrl ? <img src={logoUrl} alt="Aurora" className="h-10 brightness-200" /> : 'AURORA'}
                 </div>
                 <div className="space-y-8">
                   <p className="text-sm font-mono text-neutral-500 uppercase tracking-[0.2em] leading-loose max-w-md">
