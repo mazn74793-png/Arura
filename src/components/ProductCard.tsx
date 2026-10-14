@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Product } from '../types';
 import { useState } from 'react';
 import QuickView from './QuickView';
+import { formatPrice } from '../lib/currency';
 
 interface ProductCardProps {
   product: Product;
@@ -103,11 +104,11 @@ export default function ProductCard({ product, index }: ProductCardProps) {
                 <div className="flex items-center gap-3">
                   {product.originalPrice && product.originalPrice > product.price && (
                     <span className="relative text-[10px] font-mono text-neutral-600 px-1">
-                      ${product.originalPrice}
+                      {formatPrice(product.originalPrice)}
                       <span className="absolute left-0 right-0 top-1/2 h-px bg-red-500/60 -rotate-[25deg] transform origin-center" />
                     </span>
                   )}
-                  <span className="text-[10px] font-mono text-white">${product.price}</span>
+                  <span className="text-[10px] font-mono text-white">{formatPrice(product.price)}</span>
                 </div>
             </div>
             <div className="h-px w-0 group-hover:w-full bg-white/20 transition-all duration-700" />

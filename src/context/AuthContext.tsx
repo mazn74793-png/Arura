@@ -48,13 +48,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [adminEmails, setAdminEmails] = useState<string[]>([]);
   const unsubWishlistRef = useRef<(() => void) | null>(null);
 
+  const adminEmailsRef = useRef<string[]>([]);
+
   // 1. Dedicated Settings Listener
   useEffect(() => {
     const settingsRef = doc(db, 'settings', 'global');
     const unsubSettings = onSnapshot(settingsRef, (snap) => {
       if (snap.exists()) {
         const emails = snap.data().adminEmails || [];
-        setAdminEmails(emails.map((e: string) => e.trim().toLowerCase()));
+        const formatted = emails.map((e: string) => e.trim().toLowerCase());
+        setAdminEmails(formatted);
+        adminEmailsRef.current = formatted;
       }
     }, (error) => {
       console.warn("Settings listener failed:", error);
@@ -85,7 +89,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           // Compute admin status based on current state
           const email = firebaseUser.email?.toLowerCase();
           const isSuperAdmin = email === "motaem23y@gmail.com";
-          const isAdminInList = email && adminEmails.includes(email);
+          const isAdminInList = email && adminEmailsRef.current.includes(email);
           const needsAdminRole = isSuperAdmin || isAdminInList;
           
           if (userSnap && !userSnap.exists()) {
@@ -129,6 +133,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (unsubWishlistRef.current) unsubWishlistRef.current();
     };
   }, []);
+
+  // Reactively elevate user to admin if their email is added to global admin list or they are super admin
+  useEffect(() => {
+    if (!user || !profile) return;
+    const email = user.email?.toLowerCase();
+    const isSuperAdmin = email === "motaem23y@gmail.com";
+    const isAdminInList = email && adminEmails.includes(email);
+    const needsAdminRole = isSuperAdmin || isAdminInList;
+
+    if (needsAdminRole && profile.role !== 'admin') {
+      const userRef = doc(db, 'users', user.uid);
+      setDoc(userRef, { role: 'admin' }, { merge: true })
+        .then(() => {
+          setProfile(prev => prev ? { ...prev, role: 'admin' } : null);
+        })
+        .catch(err => console.error("Error upgrading user to admin dynamically:", err));
+    }
+  }, [user, adminEmails, profile?.role]);
 
   const loginWithGoogle = async () => {
     const provider = new GoogleAuthProvider();

@@ -5,6 +5,7 @@ import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { useState } from 'react';
 import { cn } from '../lib/utils';
+import { formatPrice } from '../lib/currency';
 
 interface QuickViewProps {
   product: Product;
@@ -73,9 +74,9 @@ export default function QuickView({ product, isOpen, onClose }: QuickViewProps) 
               <h2 className="text-3xl md:text-4xl font-display uppercase tracking-tighter leading-tight">{product.name}</h2>
               <div className="flex items-center gap-4">
                 {product.originalPrice && product.originalPrice > product.price && (
-                  <span className="text-xl font-mono text-neutral-600 line-through">${product.originalPrice}</span>
+                  <span className="text-xl font-mono text-neutral-600 line-through">{formatPrice(product.originalPrice)}</span>
                 )}
-                <p className="text-xl md:text-2xl font-mono text-white">${product.price}</p>
+                <p className="text-xl md:text-2xl font-mono text-white">{formatPrice(product.price)}</p>
               </div>
             </div>
 

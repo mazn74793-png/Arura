@@ -12,6 +12,7 @@ export default function AdminLoginPage() {
   const [isCheckingAdmins, setIsCheckingAdmins] = useState(true);
   const [noAdminsExist, setNoAdminsExist] = useState(false);
   const [user, setUser] = useState<any>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (u) => {
@@ -37,15 +38,18 @@ export default function AdminLoginPage() {
 
   const handleLogin = async () => {
     const provider = new GoogleAuthProvider();
+    setError(null);
     try {
       await signInWithPopup(auth, provider);
-    } catch (error) {
-      console.error("Login failed:", error);
+    } catch (err: any) {
+      console.error("Login failed:", err);
+      setError("Login process failed or was interrupted.");
     }
   };
 
   const claimRoot = async () => {
     if (!user) return;
+    setError(null);
     try {
       // Ensure we are using the user's actual UID as the document ID
       await setDoc(doc(db, 'admins', user.uid), {
@@ -56,9 +60,9 @@ export default function AdminLoginPage() {
       });
       // Force a state refresh
       window.location.href = '/admin/products';
-    } catch (error) {
-      console.error("Claim failed:", error);
-      alert("Clearance failed. Check console for details.");
+    } catch (err: any) {
+      console.error("Claim failed:", err);
+      setError("Clearance failed. Ensure database permissions allow this operation.");
     }
   };
 
@@ -123,6 +127,12 @@ export default function AdminLoginPage() {
               Sign In with Google
               <ArrowRight className="w-4 h-4 translate-x-0 group-hover:translate-x-2 transition-transform" />
             </button>
+          )}
+
+          {error && (
+            <div className="bg-red-500/10 border border-red-500/30 px-4 py-3 rounded-md text-red-500 font-mono text-xs uppercase tracking-wider text-center">
+              {error}
+            </div>
           )}
         </div>
 

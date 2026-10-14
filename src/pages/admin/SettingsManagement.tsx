@@ -3,6 +3,8 @@ import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { Save, Video, Upload, CheckCircle2, Loader2 } from 'lucide-react';
 import { uploadToCloudinary } from '../../lib/cloudinary';
+import { motion, AnimatePresence } from 'motion/react';
+import { cn } from '../../lib/utils';
 
 export default function SettingsManagement() {
   const [videoUrl, setVideoUrl] = useState('');
@@ -18,6 +20,12 @@ export default function SettingsManagement() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+
+  const showToast = (message: string, type: 'success' | 'error' = 'success') => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 4000);
+  };
 
   useEffect(() => {
     async function fetchSettings() {
@@ -52,7 +60,7 @@ export default function SettingsManagement() {
       else setLogoUrl(url);
     } catch (error) {
       console.error(error);
-      alert('Upload failed. Please try again.');
+      showToast('Upload failed. Please try again.', 'error');
     } finally {
       setUploading(false);
       e.target.value = ''; // Reset input
@@ -70,10 +78,10 @@ export default function SettingsManagement() {
         automationEmail: automationEmail,
         updatedAt: serverTimestamp()
       }, { merge: true });
-      alert('Settings updated successfully.');
+      showToast('Settings updated successfully.', 'success');
     } catch (error) {
       console.error(error);
-      alert('Failed to update settings.');
+      showToast('Failed to update settings.', 'error');
     } finally {
       setSaving(false);
     }
@@ -278,6 +286,32 @@ export default function SettingsManagement() {
           </button>
         </div>
       </div>
+
+      {/* Toast Notification */}
+      <AnimatePresence>
+        {toast && (
+          <motion.div
+            initial={{ opacity: 0, y: 50, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 20, scale: 0.95 }}
+            className="fixed bottom-6 right-6 z-[999] max-w-sm w-full bg-neutral-900 border border-white/10 px-6 py-4 flex items-center justify-between gap-4 shadow-2xl rounded-xl backdrop-blur-xl"
+          >
+            <div className="flex items-center gap-3">
+              <div className={cn(
+                "w-2 h-2 rounded-full animate-pulse",
+                toast.type === 'success' ? "bg-green-500 shadow-[0_0_8px_#22c55e]" : "bg-red-500 shadow-[0_0_8px_#ef4444]"
+              )} />
+              <p className="text-[10px] font-mono uppercase tracking-widest text-neutral-200">{toast.message}</p>
+            </div>
+            <button 
+              onClick={() => setToast(null)}
+              className="text-neutral-500 hover:text-white text-xs font-mono"
+            >
+              [X]
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

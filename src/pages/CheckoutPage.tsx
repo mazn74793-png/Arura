@@ -7,6 +7,7 @@ import { ChevronLeft, ShoppingBag, CheckCircle2, Trash2 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
+import { formatPrice } from '../lib/currency';
 
 export default function CheckoutPage() {
   const navigate = useNavigate();
@@ -23,6 +24,7 @@ export default function CheckoutPage() {
   const [orderId, setOrderId] = useState<string | null>(null);
   const [socialLinks, setSocialLinks] = useState({ whatsapp: '' });
   const [automationEmail, setAutomationEmail] = useState('');
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     async function fetchSettings() {
@@ -45,6 +47,7 @@ export default function CheckoutPage() {
     e.preventDefault();
     if (cart.length === 0) return;
     setIsSubmitting(true);
+    setError(null);
     
     try {
       const orderData = {
@@ -65,7 +68,7 @@ export default function CheckoutPage() {
       if (web3Key && web3Key !== 'YOUR_ACCESS_KEY_HERE') {
         const formData = new FormData();
         formData.append("access_key", web3Key);
-        formData.append("subject", `New Order from ${form.customerName} - $${cartTotal}`);
+        formData.append("subject", `New Order from ${form.customerName} - ${formatPrice(cartTotal)}`);
         formData.append("from_name", "AURORA Store");
         formData.append("Order ID", docRef.id);
         formData.append("Customer", form.customerName);
@@ -73,7 +76,7 @@ export default function CheckoutPage() {
         formData.append("Automation Email", automationEmail);
         formData.append("Phone", form.phone);
         formData.append("Address", form.address);
-        formData.append("Total", `$${cartTotal}`);
+        formData.append("Total", `${formatPrice(cartTotal)}`);
         formData.append("Items", cart.map(item => `${item.name} (${item.size}${item.color ? ` / ${item.color}` : ''}) x${item.quantity} [Image: ${item.image || 'N/A'}]`).join('\n'));
 
         fetch("https://api.web3forms.com/submit", {
@@ -84,9 +87,9 @@ export default function CheckoutPage() {
 
       clearCart();
       setIsSuccess(true);
-    } catch (error) {
-      console.error("Error submitting order:", error);
-      alert("Failed to secure order. Please check your connection.");
+    } catch (err: any) {
+      console.error("Error submitting order:", err);
+      setError("Failed to secure order. Please check your connection.");
     } finally {
       setIsSubmitting(false);
     }
@@ -207,6 +210,12 @@ export default function CheckoutPage() {
                 />
               </div>
 
+              {error && (
+                <div className="bg-red-500/10 border border-red-500/30 px-4 py-3 rounded-md text-red-500 font-mono text-xs uppercase tracking-wider">
+                  {error}
+                </div>
+              )}
+
               <button 
                 type="submit"
                 disabled={isSubmitting || cart.length === 0}
@@ -249,7 +258,7 @@ export default function CheckoutPage() {
                       </button>
                     </div>
                     <div className="text-right">
-                      <p className="text-sm font-mono">${item.price}</p>
+                      <p className="text-sm font-mono">{formatPrice(item.price)}</p>
                       <p className="text-[10px] font-mono text-neutral-500 uppercase">Qty: {item.quantity}</p>
                     </div>
                   </div>
@@ -260,7 +269,7 @@ export default function CheckoutPage() {
             <div className="pt-8 border-t border-white/10 space-y-4">
               <div className="flex justify-between items-center text-[10px] font-mono uppercase tracking-[0.2em] text-neutral-500">
                 <span>Subtotal</span>
-                <span>${cartTotal}</span>
+                <span>{formatPrice(cartTotal)}</span>
               </div>
               <div className="flex justify-between items-center text-[10px] font-mono uppercase tracking-[0.2em] text-neutral-500">
                 <span>Shipping</span>
@@ -268,7 +277,7 @@ export default function CheckoutPage() {
               </div>
               <div className="flex justify-between items-center text-xl font-display tracking-tight pt-4 border-t border-white/20">
                 <span>TOTAL</span>
-                <span>${cartTotal}</span>
+                <span>{formatPrice(cartTotal)}</span>
               </div>
             </div>
           </div>

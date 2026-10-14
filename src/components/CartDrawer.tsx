@@ -1,7 +1,8 @@
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion/react';
 import { X, Plus, Minus, ShoppingBag, Trash2 } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { useNavigate } from 'react-router-dom';
+import { formatPrice } from '../lib/currency';
 
 export default function CartDrawer() {
   const { cart, removeFromCart, updateQuantity, isCartOpen, setIsCartOpen, cartTotal } = useCart();
@@ -89,7 +90,7 @@ export default function CartDrawer() {
                             <Plus className="w-3 h-3 text-neutral-500" />
                           </button>
                         </div>
-                        <p className="font-mono text-xs">${item.price * item.quantity}</p>
+                        <p className="font-mono text-xs">{formatPrice(item.price * item.quantity)}</p>
                       </div>
                     </div>
                   </div>
@@ -102,7 +103,7 @@ export default function CartDrawer() {
               <div className="p-8 border-t border-white/5 space-y-6">
                 <div className="flex justify-between items-center text-sm font-mono uppercase tracking-widest text-neutral-400">
                   <span>Subtotal</span>
-                  <span className="text-white">${cartTotal}</span>
+                  <span className="text-white">{formatPrice(cartTotal)}</span>
                 </div>
                 <div className="space-y-3">
                   <button 

@@ -22,6 +22,7 @@ export default function LandingPage() {
   const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
   const [socialLinks, setSocialLinks] = useState<any>(null);
   const [contactEmail, setContactEmail] = useState<string>('CONCIERGE@AURORA.STUDIO');
+  const [isSubscribed, setIsSubscribed] = useState(false);
   const navigate = useNavigate();
   const { setIsCartOpen, cart } = useCart();
   const { user, isAdmin, loading: authLoading } = useAuth();
@@ -300,17 +301,28 @@ export default function LandingPage() {
                   Join our internal network for priority access to upcoming drops and conceptual explorations.
                 </p>
              </div>
-             <form onSubmit={(e) => { e.preventDefault(); alert('Identity synced to bulletin.'); }} className="flex gap-2">
-                <input 
-                  required
-                  type="email"
-                  placeholder="IDENTITY@DOMAIN.COM"
-                  className="flex-1 bg-black/50 border border-white/5 p-5 outline-none focus:border-white transition-colors font-mono text-[10px] uppercase tracking-widest"
-                />
-                <button type="submit" className="px-10 py-5 bg-white text-black font-mono font-bold text-[10px] uppercase tracking-widest hover:bg-neutral-200 transition-colors">
-                  Join
-                </button>
-             </form>
+              {isSubscribed ? (
+                <motion.div 
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="p-6 border border-white/10 bg-white/5 backdrop-blur-md rounded-lg space-y-2"
+                >
+                  <p className="text-[10px] font-mono text-white uppercase tracking-[0.2em] font-bold">IDENTITY SYNCED TO BULLETIN</p>
+                  <p className="text-[9px] font-mono text-neutral-500 uppercase tracking-widest">You have been granted priority clearance.</p>
+                </motion.div>
+              ) : (
+                <form onSubmit={(e) => { e.preventDefault(); setIsSubscribed(true); }} className="flex gap-2">
+                   <input 
+                     required
+                     type="email"
+                     placeholder="IDENTITY@DOMAIN.COM"
+                     className="flex-1 bg-black/50 border border-white/5 p-5 outline-none focus:border-white transition-colors font-mono text-[10px] uppercase tracking-widest"
+                   />
+                   <button type="submit" className="px-10 py-5 bg-white text-black font-mono font-bold text-[10px] uppercase tracking-widest hover:bg-neutral-200 transition-colors">
+                     Join
+                   </button>
+                </form>
+              )}
           </div>
         </section>
 

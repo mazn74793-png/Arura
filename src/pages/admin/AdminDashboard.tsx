@@ -11,7 +11,9 @@ import {
   Bell,
   Menu,
   X,
-  Settings as SettingsIcon
+  Settings as SettingsIcon,
+  ArrowLeft,
+  Store
 } from 'lucide-react';
 import { auth } from '../../lib/firebase';
 import { signOut } from 'firebase/auth';
@@ -67,6 +69,22 @@ export default function AdminDashboard() {
           <button onClick={() => setIsSidebarOpen(false)} className="lg:hidden p-2 -mr-2 text-neutral-400 hover:text-white transition-colors">
             <X className="w-5 h-5" />
           </button>
+        </div>
+
+        <div className="px-6 pt-4 pb-1">
+          <Link
+            to="/"
+            onClick={() => {
+              if (window.innerWidth < 1024) setIsSidebarOpen(false);
+            }}
+            className="flex items-center justify-between gap-3 px-4 py-3 rounded-xl text-xs font-mono uppercase tracking-widest text-neutral-300 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 transition-all group"
+          >
+            <div className="flex items-center gap-3">
+              <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform text-neutral-400 group-hover:text-white" />
+              <span>Back to Store</span>
+            </div>
+            <Store className="w-3.5 h-3.5 text-neutral-500" />
+          </Link>
         </div>
 
         <nav className="p-6 space-y-2">
@@ -126,6 +144,13 @@ export default function AdminDashboard() {
           </div>
 
           <div className="flex items-center gap-2 md:gap-4">
+            <Link
+              to="/"
+              className="flex items-center gap-2 px-3 py-1.5 md:px-4 md:py-2 rounded-xl bg-white/5 hover:bg-white hover:text-black border border-white/10 text-neutral-300 font-mono text-[10px] md:text-xs uppercase tracking-widest transition-all group"
+            >
+              <ArrowLeft className="w-3.5 h-3.5 group-hover:-translate-x-1 transition-transform" />
+              <span>Back to Store</span>
+            </Link>
             <button className="p-3 hover:bg-white/5 rounded-full relative z-50 cursor-pointer">
               <Bell className="w-4 h-4 md:w-5 h-5 text-neutral-400" />
               <span className="absolute top-2.5 right-2.5 md:top-3 md:right-3 w-1.5 h-1.5 bg-white rounded-full shadow-[0_0_8px_rgba(255,255,255,0.5)]" />

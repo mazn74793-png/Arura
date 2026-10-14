@@ -4,7 +4,7 @@ import { db, auth } from '../../lib/firebase';
 import { handleFirestoreError, OperationType } from '../../lib/firestoreErrorHandler';
 import { Shield, UserPlus, Trash2, Search, Mail, Loader2 } from 'lucide-react';
 import { cn } from '../../lib/utils';
-import { motion } from 'framer-motion';
+import { motion } from 'motion/react';
 
 interface AuroraUser {
   uid: string;
@@ -20,6 +20,13 @@ export default function AdminManagement() {
   const [emailInput, setEmailInput] = useState('');
   const [searching, setSearching] = useState(false);
   const [message, setMessage] = useState<{ text: string, type: 'success' | 'error' } | null>(null);
+
+  useEffect(() => {
+    if (message) {
+      const timer = setTimeout(() => setMessage(null), 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [message]);
 
   useEffect(() => {
     fetchAdmins();
@@ -96,21 +103,22 @@ export default function AdminManagement() {
       }
 
       setMessage({ text: `Access granted to ${email}`, type: 'success' });
-      alert(`Clearance granted to ${email}`);
       setEmailInput('');
       fetchAdmins();
     } catch (error) {
       console.error(error);
       setMessage({ text: "Failed to update permissions.", type: 'error' });
-      alert("Failed to grant access.");
     } finally {
       setSearching(false);
     }
   };
 
   const revokeAccess = async (uid: string, email?: string) => {
-    if (uid === auth.currentUser?.uid) return alert("Cannot revoke own clearance.");
-    if (confirm('Revoke administrator privileges for this user?')) {
+    if (uid === auth.currentUser?.uid) {
+      setMessage({ text: "Cannot revoke own clearance.", type: 'error' });
+      return;
+    }
+    if (window.confirm('Revoke administrator privileges for this user?')) {
       try {
         // 1. Remove from Global Settings List
         if (email) {
@@ -131,11 +139,11 @@ export default function AdminManagement() {
           updatedAt: serverTimestamp()
         });
         
-        alert('Privileges revoked.');
+        setMessage({ text: 'Privileges revoked.', type: 'success' });
         fetchAdmins();
       } catch (error) {
         console.error(error);
-        alert("Operation failed. Unauthorized.");
+        setMessage({ text: "Operation failed. Unauthorized.", type: 'error' });
       }
     }
   };

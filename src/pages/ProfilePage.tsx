@@ -2,16 +2,24 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useAuth } from '../context/AuthContext';
 import { db } from '../lib/firebase';
-import { collection, query, where, getDocs, orderBy } from 'firebase/firestore';
+import { collection, query, where, getDocs, orderBy, doc, getDoc } from 'firebase/firestore';
 import { useNavigate } from 'react-router-dom';
 import { User, ShoppingBag, Heart, LogOut, ChevronRight, Package, Calendar } from 'lucide-react';
 import { Product } from '../types';
 import { handleFirestoreError, OperationType } from '../lib/firestoreErrorHandler';
+import { cn } from '../lib/utils';
+import { formatPrice } from '../lib/currency';
 
 export default function ProfilePage() {
   const { profile, logout, wishlist, toggleWishlist, isAdmin } = useAuth();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<'wishlist' | 'orders' | 'admin'>(isAdmin ? 'admin' : 'wishlist');
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+
+  const showToast = (message: string, type: 'success' | 'error' = 'success') => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 4000);
+  };
 
   useEffect(() => {
     if (isAdmin && activeTab !== 'admin') {
@@ -29,16 +37,13 @@ export default function ProfilePage() {
       setLoading(true);
       
       try {
-        // Fetch Wishlist Details
+        // Fetch Wishlist Details (Optimized with parallel direct lookups)
         if (wishlist.length > 0) {
-          const prodsArr: Product[] = [];
-          for (const id of wishlist) {
-            const q = query(collection(db, 'products'), where('__name__', '==', id));
-            const snap = await getDocs(q);
-            if (!snap.empty) {
-                prodsArr.push({ ...snap.docs[0].data(), id: snap.docs[0].id } as Product);
-            }
-          }
+          const docPromises = wishlist.map(id => getDoc(doc(db, 'products', id)));
+          const docSnaps = await Promise.all(docPromises);
+          const prodsArr = docSnaps
+            .filter(snap => snap.exists())
+            .map(snap => ({ ...snap.data(), id: snap.id } as Product));
           setWishlistProducts(prodsArr);
         } else {
           setWishlistProducts([]);
@@ -206,7 +211,7 @@ export default function ProfilePage() {
                           <div className="flex justify-between items-end">
                             <div className="space-y-1">
                                 <h3 className="text-xs font-display uppercase tracking-wider">{product.name}</h3>
-                                <p className="text-[10px] font-mono text-neutral-500">${product.price}</p>
+                                <p className="text-[10px] font-mono text-neutral-500">{formatPrice(product.price)}</p>
                             </div>
                             <button onClick={() => navigate(`/product/${product.id}`)} className="p-2 hover:bg-white/5 rounded-full"><ChevronRight className="w-4 h-4" /></button>
                           </div>
@@ -250,7 +255,7 @@ export default function ProfilePage() {
                                   <button 
                                     onClick={() => {
                                       navigator.clipboard.writeText(order.id);
-                                      alert('Order Reference copied to clipboard');
+                                      showToast('Order Reference copied to clipboard');
                                     }}
                                     className="hover:text-white transition-colors"
                                   >
@@ -262,7 +267,7 @@ export default function ProfilePage() {
                             </div>
                           </div>
                           <div className="flex flex-col items-end justify-between gap-4">
-                            <span className="text-xl font-display text-white">${order.total}</span>
+                            <span className="text-xl font-display text-white">{formatPrice(order.total)}</span>
                           </div>
                         </div>
                       ))
@@ -278,6 +283,32 @@ export default function ProfilePage() {
       <footer className="py-24 border-t border-white/5 text-center px-6">
          <div className="text-[10px] font-mono text-neutral-700 uppercase tracking-[0.5em]">AURORA IDENTITY • 2026</div>
       </footer>
+
+      {/* Toast Notification */}
+      <AnimatePresence>
+        {toast && (
+          <motion.div
+            initial={{ opacity: 0, y: 50, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 20, scale: 0.95 }}
+            className="fixed bottom-6 right-6 z-[999] max-w-sm w-full bg-neutral-900 border border-white/10 px-6 py-4 flex items-center justify-between gap-4 shadow-2xl rounded-xl backdrop-blur-xl"
+          >
+            <div className="flex items-center gap-3">
+              <div className={cn(
+                "w-2 h-2 rounded-full animate-pulse",
+                toast.type === 'success' ? "bg-green-500 shadow-[0_0_8px_#22c55e]" : "bg-red-500 shadow-[0_0_8px_#ef4444]"
+              )} />
+              <p className="text-[10px] font-mono uppercase tracking-widest text-neutral-200">{toast.message}</p>
+            </div>
+            <button 
+              onClick={() => setToast(null)}
+              className="text-neutral-500 hover:text-white text-xs font-mono"
+            >
+              [X]
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

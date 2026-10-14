@@ -5,6 +5,8 @@ import { Product, Category, Gender } from '../../types';
 import { Plus, Trash2, Edit2, X, Image as ImageIcon, Save, Loader2 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { uploadToCloudinary } from '../../lib/cloudinary';
+import { motion, AnimatePresence } from 'motion/react';
+import { formatPrice } from '../../lib/currency';
 
 export default function ProductManagement() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -12,6 +14,12 @@ export default function ProductManagement() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+
+  const showToast = (message: string, type: 'success' | 'error' = 'success') => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 4000);
+  };
   
   const [formData, setFormData] = useState({
     name: '',
@@ -47,7 +55,7 @@ export default function ProductManagement() {
       }
     } catch (error) {
       console.error(error);
-      alert('Upload failed. Please try again.');
+      showToast('Upload failed. Please try again.', 'error');
     } finally {
       setUploading(false);
       if (e.target) e.target.value = ''; // Reset input
@@ -75,7 +83,7 @@ export default function ProductManagement() {
     e.preventDefault();
     
     if (formData.images.length === 0) {
-      alert('Please add at least one image.');
+      showToast('Please add at least one image.', 'error');
       return;
     }
 
@@ -90,10 +98,10 @@ export default function ProductManagement() {
     try {
       if (editingProduct) {
         await updateDoc(doc(db, 'products', editingProduct.id), data);
-        alert('Piece updated successfully.');
+        showToast('Piece updated successfully.', 'success');
       } else {
         await addDoc(collection(db, 'products'), { ...data, createdAt: serverTimestamp() });
-        alert('Piece cataloged successfully.');
+        showToast('Piece cataloged successfully.', 'success');
       }
       setIsFormOpen(false);
       setEditingProduct(null);
@@ -101,7 +109,7 @@ export default function ProductManagement() {
       fetchProducts();
     } catch (error) {
       console.error(error);
-      alert('Action failed. Please check permissions or data validity.');
+      showToast('Action failed. Please check permissions or data validity.', 'error');
     }
   };
 
@@ -121,14 +129,14 @@ export default function ProductManagement() {
   };
 
   const handleDelete = async (id: string) => {
-    if (confirm('Delete this piece?')) {
+    if (window.confirm('Delete this piece?')) {
       try {
         await deleteDoc(doc(db, 'products', id));
-        alert('Piece removed from archive.');
+        showToast('Piece removed from archive.', 'success');
         fetchProducts();
       } catch (error) {
         console.error(error);
-        alert('Delete failed. Unauthorized.');
+        showToast('Delete failed. Unauthorized.', 'error');
       }
     }
   };
@@ -197,7 +205,7 @@ export default function ProductManagement() {
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                       <label className="text-[10px] font-mono uppercase tracking-widest text-neutral-500">Current Price ($)</label>
+                       <label className="text-[10px] font-mono uppercase tracking-widest text-neutral-500">Current Price (EG)</label>
                        <input 
                          required 
                          type="number"
@@ -207,7 +215,7 @@ export default function ProductManagement() {
                        />
                     </div>
                     <div className="space-y-2">
-                       <label className="text-[10px] font-mono uppercase tracking-widest text-neutral-500">Old Price ($) - OPTIONAL</label>
+                       <label className="text-[10px] font-mono uppercase tracking-widest text-neutral-500">Old Price (EG) - OPTIONAL</label>
                        <input 
                          type="number"
                          value={formData.originalPrice}
@@ -492,7 +500,7 @@ export default function ProductManagement() {
                     <h4 className="text-lg font-display uppercase truncate">{product.name}</h4>
                     <p className="text-[10px] font-mono text-neutral-500 uppercase tracking-widest">{product.category} / {product.gender}</p>
                   </div>
-                  <div className="text-xl font-mono">${product.price}</div>
+                  <div className="text-xl font-mono">{formatPrice(product.price)}</div>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {product.sizes.map(s => <span key={s} className="text-[8px] font-mono px-2 py-1 bg-white/5 text-white/40 border border-white/5 rounded uppercase">{s}</span>)}
@@ -518,6 +526,32 @@ export default function ProductManagement() {
           ))
         )}
       </div>
+
+      {/* Toast Notification */}
+      <AnimatePresence>
+        {toast && (
+          <motion.div
+            initial={{ opacity: 0, y: 50, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 20, scale: 0.95 }}
+            className="fixed bottom-6 right-6 z-[999] max-w-sm w-full bg-neutral-900 border border-white/10 px-6 py-4 flex items-center justify-between gap-4 shadow-2xl rounded-xl backdrop-blur-xl"
+          >
+            <div className="flex items-center gap-3">
+              <div className={cn(
+                "w-2 h-2 rounded-full animate-pulse",
+                toast.type === 'success' ? "bg-green-500 shadow-[0_0_8px_#22c55e]" : "bg-red-500 shadow-[0_0_8px_#ef4444]"
+              )} />
+              <p className="text-[10px] font-mono uppercase tracking-widest text-neutral-200">{toast.message}</p>
+            </div>
+            <button 
+              onClick={() => setToast(null)}
+              className="text-neutral-500 hover:text-white text-xs font-mono"
+            >
+              [X]
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
