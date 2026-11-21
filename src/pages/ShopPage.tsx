@@ -27,6 +27,7 @@ export default function ShopPage() {
     { id: 'basic-tops', label: 'Basic Tops' },
     { id: 'sets', label: 'Sets' },
     { id: 'sweatshirts', label: 'Sweatshirts' },
+    { id: 'hoodies', label: 'Hoodies' },
     { id: 'shorts', label: 'Shorts' },
     { id: 'accessories', label: 'Accessories' },
     { id: 'jackets', label: 'Jackets' },

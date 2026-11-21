@@ -4,9 +4,10 @@ import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { Product, Gender } from '../types';
 import { motion, AnimatePresence } from 'motion/react';
-import { ChevronLeft, ChevronRight, Plus, Minus, Info, ShoppingBag, Heart } from 'lucide-react';
+import { ChevronLeft, Plus, Minus, Info, ShoppingBag, Heart } from 'lucide-react';
 import { cn } from '../lib/utils';
 import ProductReviews from '../components/ProductReviews';
+import SwipeableGallery from '../components/SwipeableGallery';
 import { formatPrice } from '../lib/currency';
 
 import { useCart } from '../context/CartContext';
@@ -132,60 +133,55 @@ export default function ProductDetailsPage() {
       <main className="max-w-7xl mx-auto px-4 md:px-6 py-8 md:py-24">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-16 items-start">
           {/* Gallery */}
-          <div className="space-y-4">
-            <div className="relative group aspect-[3/4] bg-neutral-900 border border-white/5 overflow-hidden">
-              <AnimatePresence mode="wait">
-                <motion.img 
-                  key={activeImageIndex + (selectedColor || '')}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.5 }}
-                  src={
-                    (selectedColor && activeImageIndex === 0 && product.colors?.find(c => c.name === selectedColor)?.image) || 
-                    product.images[activeImageIndex]
-                  } 
+          {(() => {
+            const selectedColorImage = selectedColor
+              ? product.colors?.find((c) => c.name === selectedColor)?.image
+              : undefined;
+            const galleryImages =
+              product.images.length > 0
+                ? product.images.map((img, idx) =>
+                    idx === 0 && selectedColorImage ? selectedColorImage : img
+                  )
+                : selectedColorImage
+                  ? [selectedColorImage]
+                  : [];
+
+            return (
+              <div className="space-y-4">
+                <SwipeableGallery
+                  images={galleryImages}
+                  activeIndex={activeImageIndex}
+                  onChangeIndex={setActiveImageIndex}
                   alt={product.name}
-                  className="w-full h-full object-cover"
-                  referrerPolicy="no-referrer"
+                  className="aspect-[3/4] bg-neutral-900 border border-white/5"
                 />
-              </AnimatePresence>
-              
-              {product.images.length > 1 && (
-                <div className="absolute inset-0 flex items-center justify-between p-4 pointer-events-none">
-                  <button 
-                    onClick={() => setActiveImageIndex((prev) => (prev > 0 ? prev - 1 : product.images.length - 1))}
-                    className="w-12 h-12 bg-black/40 backdrop-blur-md rounded-full flex items-center justify-center text-white/50 hover:text-white hover:bg-black/60 transition-all pointer-events-auto border border-white/5"
-                  >
-                    <ChevronLeft className="w-6 h-6" />
-                  </button>
-                  <button 
-                    onClick={() => setActiveImageIndex((prev) => (prev < product.images.length - 1 ? prev + 1 : 0))}
-                    className="w-12 h-12 bg-black/40 backdrop-blur-md rounded-full flex items-center justify-center text-white/50 hover:text-white hover:bg-black/60 transition-all pointer-events-auto border border-white/5"
-                  >
-                    <ChevronRight className="w-6 h-6" />
-                  </button>
-                </div>
-              )}
-            </div>
-            
-            {product.images.length > 1 && (
-              <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-none">
-                {product.images.map((img, i) => (
-                  <button
-                    key={i}
-                    onClick={() => setActiveImageIndex(i)}
-                    className={cn(
-                      "flex-shrink-0 w-20 aspect-[3/4] bg-neutral-900 border overflow-hidden transition-all duration-300",
-                      activeImageIndex === i ? "border-white" : "border-white/5 opacity-40 hover:opacity-100"
-                    )}
-                  >
-                    <img src={img} alt="thumbnail" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
-                  </button>
-                ))}
+
+                {galleryImages.length > 1 && (
+                  <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-none">
+                    {galleryImages.map((img, i) => (
+                      <button
+                        key={`${img}-${i}`}
+                        onClick={() => setActiveImageIndex(i)}
+                        className={cn(
+                          'flex-shrink-0 w-20 aspect-[3/4] bg-neutral-900 border overflow-hidden transition-all duration-300',
+                          activeImageIndex === i
+                            ? 'border-white'
+                            : 'border-white/5 opacity-40 hover:opacity-100'
+                        )}
+                      >
+                        <img
+                          src={img}
+                          alt={`${product.name} thumbnail ${i + 1}`}
+                          className="w-full h-full object-cover"
+                          referrerPolicy="no-referrer"
+                        />
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
-            )}
-          </div>
+            );
+          })()}
 
           {/* Details */}
           <motion.div 

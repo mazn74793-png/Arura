@@ -41,7 +41,7 @@ service cloud.firestore {
              data.description is string && data.description.size() <= 2000 &&
              data.price is number && data.price > 0 &&
              (data.originalPrice == null || (data.originalPrice is number && data.originalPrice >= 0)) &&
-             data.category in ['pants', 'shirt', 'basic-tops', 'sets', 'sweatshirts', 'shorts', 'accessories', 'jackets'] &&
+             data.category in ['pants', 'shirt', 'basic-tops', 'sets', 'sweatshirts', 'hoodies', 'shorts', 'accessories', 'jackets'] &&
              data.images is list && data.images.size() <= 5 &&
              (data.colors == null || data.colors is list) &&
              (data.status == null || data.status in ['sale', 'sold', 'new', 'none']) &&

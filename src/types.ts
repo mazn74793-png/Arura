@@ -1,4 +1,4 @@
-export type Category = 'pants' | 'shirt' | 'basic-tops' | 'sets' | 'sweatshirts' | 'shorts' | 'accessories' | 'jackets';
+export type Category = 'pants' | 'shirt' | 'basic-tops' | 'sets' | 'sweatshirts' | 'hoodies' | 'shorts' | 'accessories' | 'jackets';
 export type Gender = 'man' | 'woman' | 'unisex';
 export type OrderStatus = 'pending' | 'confirmed' | 'shipped' | 'delivered' | 'cancelled';
 

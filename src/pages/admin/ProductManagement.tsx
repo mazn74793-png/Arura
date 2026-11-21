@@ -251,6 +251,7 @@ export default function ProductManagement() {
                         <option value="basic-tops">Basic Tops</option>
                         <option value="sets">Sets</option>
                         <option value="sweatshirts">Sweatshirts</option>
+                        <option value="hoodies">Hoodies</option>
                         <option value="shorts">Shorts</option>
                         <option value="accessories">Accessories</option>
                         <option value="jackets">Jackets</option>

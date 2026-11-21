@@ -3,9 +3,10 @@ import { X, ShoppingBag, Heart } from 'lucide-react';
 import { Product } from '../types';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { cn } from '../lib/utils';
 import { formatPrice } from '../lib/currency';
+import SwipeableGallery from './SwipeableGallery';
 
 interface QuickViewProps {
   product: Product;
@@ -15,11 +16,30 @@ interface QuickViewProps {
 
 export default function QuickView({ product, isOpen, onClose }: QuickViewProps) {
   const { addToCart, setIsCartOpen } = useCart();
-  const { wishlist, toggleWishlist, user } = useAuth();
+  const { wishlist, toggleWishlist } = useAuth();
   const [selectedSize, setSelectedSize] = useState(product.sizes[0] || '');
   const [selectedColor, setSelectedColor] = useState(product.colors?.[0]?.name || '');
+  const [activeImageIndex, setActiveImageIndex] = useState(0);
+
+  useEffect(() => {
+    if (isOpen) {
+      setActiveImageIndex(0);
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
+
+  const selectedColorImage = selectedColor
+    ? product.colors?.find((c) => c.name === selectedColor)?.image
+    : undefined;
+  const galleryImages =
+    product.images.length > 0
+      ? product.images.map((img, idx) =>
+          idx === 0 && selectedColorImage ? selectedColorImage : img
+        )
+      : selectedColorImage
+        ? [selectedColorImage]
+        : [];
 
   const handleAddToCart = () => {
     addToCart({
@@ -59,14 +79,13 @@ export default function QuickView({ product, isOpen, onClose }: QuickViewProps) 
             <X className="w-5 h-5" />
           </button>
 
-          <div className="aspect-[3/4] bg-neutral-900 border-r border-white/5">
-            <img 
-              src={product.colors?.find(c => c.name === selectedColor)?.image || product.images[0]} 
-              alt={product.name}
-              className="w-full h-full object-cover"
-              referrerPolicy="no-referrer"
-            />
-          </div>
+          <SwipeableGallery
+            images={galleryImages}
+            activeIndex={activeImageIndex}
+            onChangeIndex={setActiveImageIndex}
+            alt={product.name}
+            className="aspect-[3/4] bg-neutral-900 border-r border-white/5"
+          />
 
           <div className="p-8 md:p-12 space-y-8 overflow-y-auto max-h-[80vh] md:max-h-full">
             <div className="space-y-4">
@@ -88,7 +107,10 @@ export default function QuickView({ product, isOpen, onClose }: QuickViewProps) 
                     {product.colors.map((color) => (
                       <button
                         key={color.name}
-                        onClick={() => setSelectedColor(color.name)}
+                        onClick={() => {
+                          setSelectedColor(color.name);
+                          setActiveImageIndex(0);
+                        }}
                         className={cn(
                           "w-8 h-8 rounded-full border-2 p-0.5 transition-all",
                           selectedColor === color.name ? "border-white scale-110" : "border-white/10"

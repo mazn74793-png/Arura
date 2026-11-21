@@ -9,7 +9,7 @@
         "description": { "type": "string" },
         "price": { "type": "number" },
         "originalPrice": { "type": "number" },
-        "category": { "type": "string", "enum": ["pants", "shirt", "basic-tops", "sets", "sweatshirts", "shorts", "accessories", "jackets"] },
+        "category": { "type": "string", "enum": ["pants", "shirt", "basic-tops", "sets", "sweatshirts", "hoodies", "shorts", "accessories", "jackets"] },
         "status": { "type": "string", "enum": ["sale", "sold", "new", "none"] },
         "images": { "type": "array", "items": { "type": "string" } },
         "colors": {
