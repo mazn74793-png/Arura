@@ -20,7 +20,6 @@ import {
   Truck, 
   XCircle, 
   Bell, 
-  ChevronDown, 
   User, 
   MapPin, 
   Phone, 
@@ -32,11 +31,8 @@ import {
   CalendarDays, 
   X, 
   MessageSquare, 
-  ExternalLink,
   Copy,
   Check,
-  Filter,
-  DollarSign,
   AlertCircle
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
@@ -50,6 +46,9 @@ export default function OrderManagement() {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [updatingStatusId, setUpdatingStatusId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   // Filters
   const [searchQuery, setSearchQuery] = useState('');
@@ -71,14 +70,18 @@ export default function OrderManagement() {
     return () => unsubscribe();
   }, []);
 
+  useEffect(() => {
+    setConfirmDeleteId(null);
+  }, [selectedOrder?.id]);
+
   const updateStatus = async (orderId: string, status: OrderStatus) => {
+    setUpdatingStatusId(orderId);
     try {
       await updateDoc(doc(db, 'orders', orderId), { 
         status,
         updatedAt: serverTimestamp()
       });
       
-      // Auto-send notification simulation
       await addDoc(collection(db, 'notifications'), {
         orderId,
         phone: orders.find(o => o.id === orderId)?.phone || '',
@@ -93,19 +96,38 @@ export default function OrderManagement() {
     } catch (error) {
       console.error(error);
       showToast('Failed to update status', 'error');
+    } finally {
+      setUpdatingStatusId(null);
+    }
+  };
+
+  const handleSendAlert = async (order: Order) => {
+    try {
+      await addDoc(collection(db, 'notifications'), {
+        orderId: order.id,
+        phone: order.phone || '',
+        message: `Aurora Dispatch Update: Your order #${order.id.slice(-6)} is currently ${order.status.toUpperCase()}.`,
+        createdAt: serverTimestamp()
+      });
+      showToast(`Alert logged for ${order.phone || order.customerName}`);
+    } catch (error) {
+      console.error(error);
+      showToast('Failed to send alert', 'error');
     }
   };
 
   const deleteOrder = async (orderId: string) => {
-    if (window.confirm('Delete this order permanently from records? This action cannot be reversed.')) {
-      try {
-        await deleteDoc(doc(db, 'orders', orderId));
-        if (selectedOrder?.id === orderId) setSelectedOrder(null);
-        showToast('Transmission purged from system.');
-      } catch (error) {
-        console.error(error);
-        showToast('Purge failed. Unauthorized.', 'error');
-      }
+    setDeletingId(orderId);
+    try {
+      await deleteDoc(doc(db, 'orders', orderId));
+      if (selectedOrder?.id === orderId) setSelectedOrder(null);
+      setConfirmDeleteId(null);
+      showToast('Order deleted permanently.');
+    } catch (error) {
+      console.error(error);
+      showToast('Delete failed. Unauthorized.', 'error');
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -298,14 +320,14 @@ export default function OrderManagement() {
             <p className="text-[8px] font-mono text-neutral-500 uppercase tracking-widest flex items-center gap-1.5">
               <TrendingUp className="w-3 h-3 text-neutral-400" /> Orders
             </p>
-            <p className="text-lg md:text-xl font-display uppercase">{filteredStats.count}</p>
+            <p className="text-lg md:text-xl font-display uppercase tabular-nums">{filteredStats.count}</p>
           </div>
 
           <div className="bg-black/30 border border-white/5 p-4 rounded-xl space-y-1">
             <p className="text-[8px] font-mono text-neutral-500 uppercase tracking-widest flex items-center gap-1.5">
               <span className="w-3 h-3 font-mono text-[9px] text-green-400 flex items-center justify-center font-bold">EG</span> Revenue
             </p>
-            <p className="text-lg md:text-xl font-display uppercase text-green-400 truncate">
+            <p className="text-lg md:text-xl font-display uppercase text-green-400 truncate tabular-nums">
               {formatPrice(filteredStats.revenue)}
             </p>
           </div>
@@ -314,14 +336,14 @@ export default function OrderManagement() {
             <p className="text-[8px] font-mono text-neutral-500 uppercase tracking-widest flex items-center gap-1.5">
               <Clock className="w-3 h-3 text-amber-400" /> Pending
             </p>
-            <p className="text-lg md:text-xl font-display uppercase text-amber-400">{filteredStats.pendingCount}</p>
+            <p className="text-lg md:text-xl font-display uppercase text-amber-400 tabular-nums">{filteredStats.pendingCount}</p>
           </div>
 
           <div className="bg-black/30 border border-white/5 p-4 rounded-xl space-y-1">
             <p className="text-[8px] font-mono text-neutral-500 uppercase tracking-widest flex items-center gap-1.5">
               <CheckCircle2 className="w-3 h-3 text-emerald-400" /> Delivered
             </p>
-            <p className="text-lg md:text-xl font-display uppercase text-emerald-400">{filteredStats.deliveredCount}</p>
+            <p className="text-lg md:text-xl font-display uppercase text-emerald-400 tabular-nums">{filteredStats.deliveredCount}</p>
           </div>
         </div>
       </header>
@@ -501,7 +523,7 @@ export default function OrderManagement() {
       {/* Main Grid: Orders List & Detailed Panel */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8 items-start">
         {/* Order Cards List */}
-        <div className="lg:col-span-2 space-y-3 md:space-y-4 max-h-[calc(100vh-320px)] overflow-y-auto md:pr-2 custom-scrollbar">
+        <div className="lg:col-span-2 space-y-3 md:space-y-4 lg:max-h-[calc(100vh-260px)] lg:overflow-y-auto lg:pr-2 custom-scrollbar">
           {loading ? (
             <div className="py-24 text-center space-y-3 bg-neutral-900/40 rounded-2xl border border-white/5">
               <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin mx-auto" />
@@ -706,9 +728,11 @@ export default function OrderManagement() {
                         return (
                           <button
                             key={s}
+                            type="button"
+                            disabled={updatingStatusId === selectedOrder.id}
                             onClick={() => updateStatus(selectedOrder.id, s)}
                             className={cn(
-                              "px-3 py-1.5 rounded-xl text-[9px] font-mono uppercase tracking-widest border transition-all",
+                              "px-3 py-1.5 rounded-xl text-[9px] font-mono uppercase tracking-widest border transition-all whitespace-nowrap shrink-0 disabled:opacity-50",
                               isCurrent 
                                 ? "bg-white text-black border-white font-bold shadow-md" 
                                 : "border-white/10 text-neutral-400 hover:text-white hover:border-white/30 bg-black/30"
@@ -828,44 +852,62 @@ export default function OrderManagement() {
                 {/* Actions: Direct Notify & Delete */}
                 <div className="pt-4 border-t border-white/5 space-y-3">
                   <button 
-                    onClick={() => {
-                      const phone = selectedOrder.phone;
-                      showToast(`Transmission alert logged for ${phone}`);
-                    }}
+                    type="button"
+                    onClick={() => handleSendAlert(selectedOrder)}
                     className="w-full py-3.5 bg-white/5 border border-white/10 hover:border-white transition-all rounded-xl flex items-center justify-center gap-3 text-xs font-mono uppercase tracking-widest text-neutral-200 hover:text-white"
                   >
                     <Bell className="w-4 h-4 text-neutral-400" />
-                    <span>Ping Customer SMS</span>
+                    <span>Log Status Alert</span>
                   </button>
                   
-                  <button 
-                    onClick={() => deleteOrder(selectedOrder.id)}
-                    className="w-full py-3 bg-red-500/10 border border-red-500/20 hover:bg-red-500 hover:text-white transition-all rounded-xl text-red-500 text-xs font-mono uppercase tracking-widest flex items-center justify-center gap-2"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                    <span>Purge Order From Records</span>
-                  </button>
+                  {confirmDeleteId === selectedOrder.id ? (
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        disabled={deletingId === selectedOrder.id}
+                        onClick={() => deleteOrder(selectedOrder.id)}
+                        className="flex-1 py-3 bg-red-500 text-white rounded-xl text-xs font-mono uppercase tracking-widest font-bold hover:bg-red-600 transition-all disabled:opacity-50"
+                      >
+                        {deletingId === selectedOrder.id ? 'Deleting...' : 'Confirm Delete'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setConfirmDeleteId(null)}
+                        className="px-4 py-3 bg-white/5 border border-white/10 hover:bg-white/10 rounded-xl text-xs font-mono uppercase tracking-widest text-neutral-300 transition-all"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  ) : (
+                    <button 
+                      type="button"
+                      onClick={() => setConfirmDeleteId(selectedOrder.id)}
+                      className="w-full py-3 bg-red-500/10 border border-red-500/20 hover:bg-red-500 hover:text-white transition-all rounded-xl text-red-500 text-xs font-mono uppercase tracking-widest flex items-center justify-center gap-2"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                      <span>Delete Order</span>
+                    </button>
+                  )}
                 </div>
               </div>
             </motion.aside>
           )}
         </AnimatePresence>
 
-        {/* Desktop placeholder when no order is clicked */}
-        <aside className={cn(
-          "hidden lg:flex bg-neutral-900/30 border border-dashed border-white/5 rounded-3xl p-8 min-h-[500px] flex-col items-center justify-center text-center opacity-50",
-          selectedOrder ? "hidden" : "block"
-        )}>
-          <div className="space-y-4 max-w-xs">
-            <ShoppingBag className="w-12 h-12 text-neutral-700 mx-auto" />
-            <div className="space-y-1">
-              <p className="font-display uppercase text-sm text-neutral-400">No Transmission Selected</p>
-              <p className="text-[10px] font-mono uppercase tracking-widest text-neutral-600">
-                Click any order on the left to verify details, update status, or dispatch customer alerts.
-              </p>
+        {/* Desktop placeholder when no order is selected */}
+        {!selectedOrder && (
+          <aside className="hidden lg:flex bg-neutral-900/30 border border-dashed border-white/5 rounded-3xl p-8 min-h-[500px] flex-col items-center justify-center text-center opacity-60">
+            <div className="space-y-4 max-w-xs">
+              <ShoppingBag className="w-12 h-12 text-neutral-700 mx-auto" />
+              <div className="space-y-1">
+                <p className="font-display uppercase text-sm text-neutral-400">No Order Selected</p>
+                <p className="text-[10px] font-mono uppercase tracking-widest text-neutral-600">
+                  Click any order on the left to inspect details, update status, or contact the customer.
+                </p>
+              </div>
             </div>
-          </div>
-        </aside>
+          </aside>
+        )}
       </div>
 
       {/* Floating Toast Notification */}
@@ -878,17 +920,20 @@ export default function OrderManagement() {
             className="fixed bottom-6 right-6 z-[999] max-w-sm w-full bg-neutral-900 border border-white/10 px-6 py-4 flex items-center justify-between gap-4 shadow-2xl rounded-2xl backdrop-blur-xl"
           >
             <div className="flex items-center gap-3">
-              <div className={cn(
-                "w-2 h-2 rounded-full animate-pulse",
-                toast.type === 'success' ? "bg-emerald-400 shadow-[0_0_8px_#34d399]" : "bg-red-400 shadow-[0_0_8px_#f87171]"
-              )} />
+              {toast.type === 'success' ? (
+                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+              ) : (
+                <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
+              )}
               <p className="text-[10px] font-mono uppercase tracking-widest text-neutral-200">{toast.message}</p>
             </div>
             <button 
+              type="button"
               onClick={() => setToast(null)}
               className="text-neutral-500 hover:text-white text-xs font-mono"
+              aria-label="Dismiss notification"
             >
-              [X]
+              <X className="w-4 h-4" />
             </button>
           </motion.div>
         )}

@@ -8,6 +8,7 @@ import { ChevronLeft, Plus, Minus, Info, ShoppingBag, Heart } from 'lucide-react
 import { cn } from '../lib/utils';
 import ProductReviews from '../components/ProductReviews';
 import SwipeableGallery from '../components/SwipeableGallery';
+import ImageZoomModal from '../components/ImageZoomModal';
 import { formatPrice } from '../lib/currency';
 
 import { useCart } from '../context/CartContext';
@@ -32,6 +33,7 @@ export default function ProductDetailsPage() {
     setTimeout(() => setToast(null), 4000);
   };
   const [activeImageIndex, setActiveImageIndex] = useState(0);
+  const [isZoomOpen, setIsZoomOpen] = useState(false);
 
   useEffect(() => {
     async function fetchSettings() {
@@ -153,6 +155,7 @@ export default function ProductDetailsPage() {
                   activeIndex={activeImageIndex}
                   onChangeIndex={setActiveImageIndex}
                   alt={product.name}
+                  onImageClick={() => setIsZoomOpen(true)}
                   className="aspect-[3/4] bg-neutral-900 border border-white/5"
                 />
 
@@ -179,6 +182,14 @@ export default function ProductDetailsPage() {
                     ))}
                   </div>
                 )}
+
+                <ImageZoomModal
+                  images={galleryImages}
+                  initialIndex={activeImageIndex}
+                  isOpen={isZoomOpen}
+                  onClose={() => setIsZoomOpen(false)}
+                  alt={product.name}
+                />
               </div>
             );
           })()}

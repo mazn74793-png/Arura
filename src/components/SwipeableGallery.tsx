@@ -1,5 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { motion } from 'motion/react';
+import { ZoomIn } from 'lucide-react';
 import { cn } from '../lib/utils';
 
 interface SwipeableGalleryProps {
@@ -11,7 +12,7 @@ interface SwipeableGalleryProps {
   imageClassName?: string;
   showIndicators?: boolean;
   indicatorPosition?: 'bottom' | 'top';
-  grayscale?: boolean;
+  onImageClick?: (index: number) => void;
   children?: React.ReactNode;
 }
 
@@ -24,6 +25,7 @@ export default function SwipeableGallery({
   imageClassName,
   showIndicators = true,
   indicatorPosition = 'bottom',
+  onImageClick,
   children,
 }: SwipeableGalleryProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -54,10 +56,8 @@ export default function SwipeableGallery({
   const canSwipe = images.length > 1;
 
   const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (!canSwipe) return;
     if (e.pointerType === 'mouse' && e.button !== 0) return;
 
-    // Ignore pointer down on interactive controls like buttons inside overlays
     const target = e.target as HTMLElement;
     if (target.closest('button, a')) return;
 
@@ -94,12 +94,12 @@ export default function SwipeableGallery({
         }
       } else {
         g.lockedAxis = 'y';
+        g.hasMoved = true;
         return;
       }
     }
 
     if (g.lockedAxis === 'x') {
-      // Rubber-band resistance at edges
       if ((safeIndex === 0 && dx > 0) || (safeIndex === images.length - 1 && dx < 0)) {
         setDragOffset(dx * 0.25);
       } else {
@@ -122,10 +122,10 @@ export default function SwipeableGallery({
       }
     }
 
-    if (g.lockedAxis === 'x') {
+    if (g.lockedAxis === 'x' && canSwipe) {
       const dx = e.clientX - g.startX;
       const dt = Math.max(1, performance.now() - g.startTime);
-      const velocity = dx / dt; // px per ms
+      const velocity = dx / dt;
       const width = containerRef.current?.offsetWidth || 300;
       const threshold = Math.min(60, width * 0.16);
 
@@ -150,11 +150,19 @@ export default function SwipeableGallery({
     setDragOffset(0);
   };
 
-  const handleClickCapture = (e: React.MouseEvent<HTMLDivElement>) => {
+  const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (suppressClickRef.current) {
       e.preventDefault();
       e.stopPropagation();
       suppressClickRef.current = false;
+      return;
+    }
+
+    const target = e.target as HTMLElement;
+    if (target.closest('button, a')) return;
+
+    if (onImageClick && !gestureRef.current.hasMoved) {
+      onImageClick(safeIndex);
     }
   };
 
@@ -176,11 +184,12 @@ export default function SwipeableGallery({
       onPointerMove={handlePointerMove}
       onPointerUp={finishGesture}
       onPointerCancel={finishGesture}
-      onClickCapture={handleClickCapture}
+      onClick={handleClick}
       style={{ touchAction: canSwipe ? 'pan-y' : 'auto' }}
       className={cn(
-        'relative overflow-hidden select-none outline-none focus-visible:ring-1 focus-visible:ring-white/40',
-        canSwipe && (isDragging ? 'cursor-grabbing' : 'cursor-grab'),
+        'relative overflow-hidden select-none outline-none focus-visible:ring-1 focus-visible:ring-white/40 bg-neutral-900',
+        canSwipe && (isDragging ? 'cursor-grabbing' : onImageClick ? 'cursor-zoom-in' : 'cursor-grab'),
+        !canSwipe && onImageClick && 'cursor-zoom-in',
         className
       )}
     >
@@ -208,6 +217,21 @@ export default function SwipeableGallery({
           </div>
         ))}
       </motion.div>
+
+      {/* Subtle tap-to-zoom affordance */}
+      {onImageClick && (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onImageClick(safeIndex);
+          }}
+          aria-label="Open fullscreen zoom"
+          className="absolute top-3 right-3 z-10 w-9 h-9 rounded-full bg-black/50 backdrop-blur-md border border-white/10 text-white/70 hover:text-white hover:bg-black/75 flex items-center justify-center transition-all"
+        >
+          <ZoomIn className="w-4 h-4" />
+        </button>
+      )}
 
       {/* Subtle scrim and pagination bars for multi-image products */}
       {canSwipe && showIndicators && (

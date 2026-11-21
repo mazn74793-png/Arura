@@ -200,6 +200,7 @@ export default function ProfilePage() {
                               alt={product.name} 
                               className="w-full h-full object-cover brightness-75 group-hover:scale-105 transition-all duration-1000"
                               onClick={() => navigate(`/product/${product.id}`)}
+                              referrerPolicy="no-referrer"
                             />
                             <button 
                               onClick={() => toggleWishlist(product.id)}

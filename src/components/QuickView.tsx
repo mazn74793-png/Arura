@@ -7,6 +7,7 @@ import { useState, useEffect } from 'react';
 import { cn } from '../lib/utils';
 import { formatPrice } from '../lib/currency';
 import SwipeableGallery from './SwipeableGallery';
+import ImageZoomModal from './ImageZoomModal';
 
 interface QuickViewProps {
   product: Product;
@@ -20,10 +21,12 @@ export default function QuickView({ product, isOpen, onClose }: QuickViewProps) 
   const [selectedSize, setSelectedSize] = useState(product.sizes[0] || '');
   const [selectedColor, setSelectedColor] = useState(product.colors?.[0]?.name || '');
   const [activeImageIndex, setActiveImageIndex] = useState(0);
+  const [isZoomOpen, setIsZoomOpen] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
       setActiveImageIndex(0);
+      setIsZoomOpen(false);
     }
   }, [isOpen]);
 
@@ -84,7 +87,16 @@ export default function QuickView({ product, isOpen, onClose }: QuickViewProps) 
             activeIndex={activeImageIndex}
             onChangeIndex={setActiveImageIndex}
             alt={product.name}
+            onImageClick={() => setIsZoomOpen(true)}
             className="aspect-[3/4] bg-neutral-900 border-r border-white/5"
+          />
+
+          <ImageZoomModal
+            images={galleryImages}
+            initialIndex={activeImageIndex}
+            isOpen={isZoomOpen}
+            onClose={() => setIsZoomOpen(false)}
+            alt={product.name}
           />
 
           <div className="p-8 md:p-12 space-y-8 overflow-y-auto max-h-[80vh] md:max-h-full">
